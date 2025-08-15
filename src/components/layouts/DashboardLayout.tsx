@@ -37,7 +37,7 @@ const DashboardLayout = () => {
             <SidebarInset>
                 <div className="flex flex-col min-h-screen">
                     <SidebarToggle />
-                    <main className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 to-blue-50/30">
+                    <main className="flex-1 bg-gradient-to-br from-slate-50 to-blue-50/30">
                         <div className=" bg-white dark:bg-slate-900">
                             <Outlet />
                             <Toaster richColors/>

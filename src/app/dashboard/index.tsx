@@ -2,27 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
-import {
-	AlertTriangle,
-	ArrowDown,
-	ArrowRight,
-	BarChart,
-	CheckCircle2,
-	GitCompareArrows,
-	HeartPulse,
-	History,
-	Loader2,
-	PieChart,
-	ShieldCheck,
-	Star,
-	TrendingUp,
-	Trophy,
-	XCircle,
-	Zap,
-	X,
-	Award,
-	ArrowUp,
-} from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowRight, BarChart, CheckCircle2, GitCompareArrows, HeartPulse, History, Loader2, PieChart, ShieldCheck, Star, TrendingUp, Trophy, XCircle, Zap, X, Award, ArrowUp } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -329,8 +309,8 @@ export default function HealthyControlDashboard() {
 								<div className="grid grid-cols-2 gap-4 mb-1">
 									<StatCard icon={<BarChart />} title="Total Analisis" value={summary.total_assessments} />
 									<StatCard icon={<PieChart />} title="Rata-rata" value={`${formatRiskPercentage(average)}%`} />
-									<StatCard icon={<TrendingUp />} title="Tertinggi" value={`${formatRiskPercentage(highest)}%`} color="text-red-500" />
-									<StatCard icon={<ShieldCheck />} title="Terendah" value={`${formatRiskPercentage(lowest)}%`} color="text-green-500" />
+									<StatCard icon={<TrendingUp />} title="Tertinggi" value={`${highest.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`} color="text-red-500" />
+									<StatCard icon={<ShieldCheck />} title="Terendah" value={`${lowest.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`} color="text-green-500" />{' '}
 								</div>
 							</SidebarCard>
 							<SidebarCard title="Pencapaian Anda" icon={<Trophy className="text-amber-500" />}>

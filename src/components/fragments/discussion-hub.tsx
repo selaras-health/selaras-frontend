@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, MessageCircle, MoreHorizontal, Edit3, Trash2, Edit } from 'lucide-react';
+import { Plus, MessageCircle, MoreHorizontal, Edit3, Trash2, Edit, MessageCircleHeart } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -43,7 +43,7 @@ export function DiscussionHub({ programSlug, discussions, isReadOnly = false, on
 		<Card className="shadow-lg rounded-2xl bg-white/80 backdrop-blur-sm border-slate-200/80">
 			<CardHeader>
 				<CardTitle className="font-semibold text-slate-900 flex items-center gap-2">
-					<MessageCircle className="w-5 h-5 text-rose-500" />
+					<MessageCircleHeart className="w-5 h-5 text-rose-500" />
 					Konsultasi Dengan AI Coach
 				</CardTitle>
 			</CardHeader>

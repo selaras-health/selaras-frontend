@@ -95,7 +95,6 @@ const getTodayISO = (): string => {
 };
 
 // --- HELPER & SKELETON COMPONENTS ---
-
 const Skeleton = ({ className }: { className?: string }) => <div className={`animate-pulse rounded-md bg-slate-200 ${className}`} />;
 
 const ProgramHeroSkeleton = () => (
@@ -357,8 +356,8 @@ const ProgramHero = ({ program, onAction }: { program: ProgramData; onAction: (a
 	);
 };
 
-// --- RESPONSIVE MissionItem COMPONENT ---
-const MissionItem = ({ mission, onComplete, isReadOnly, isMissed, isGlowing }: { mission: any; onComplete: (id: string) => void; isReadOnly: boolean; isMissed: boolean; isGlowing: boolean }) => {
+// --- RESPONSIVE MissionItem COMPONENT (UPDATED) ---
+const MissionItem = ({ mission, onComplete, isReadOnly, isMissed, isGlowing }: { mission: any; onComplete: (id: string, currentState: boolean) => void; isReadOnly: boolean; isMissed: boolean; isGlowing: boolean }) => {
 	const { id, title, description, is_completed, task_type } = mission;
 	const isMainMission = task_type === 'main_mission';
 
@@ -396,10 +395,10 @@ const MissionItem = ({ mission, onComplete, isReadOnly, isMissed, isGlowing }: {
 					{isMainMission ? 'Misi Utama' : 'Bonus'}
 				</Badge>
 				<motion.button
-					onClick={() => onComplete(id)}
-					disabled={isReadOnly || isMissed || is_completed}
+					onClick={() => onComplete(id, is_completed)}
+					disabled={isReadOnly || isMissed}
 					className={`flex-shrink-0 w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${styles.buttonColor} ${isReadOnly || isMissed ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-					whileHover={isReadOnly || isMissed ? {} : { scale: 1.1, rotate: is_completed ? 0 : 10 }}
+					whileHover={isReadOnly || isMissed ? {} : { scale: 1.1, rotate: is_completed ? -10 : 10 }}
 					whileTap={isReadOnly || isMissed ? {} : { scale: 0.9 }}
 				>
 					{is_completed && <CheckCircle2 className="w-8 h-8 text-white" />}
@@ -490,7 +489,7 @@ const GraduationCelebration = ({ details, onOpenReport }: { details: GraduationD
 					Anda telah berhasil menyelesaikan program <strong>{details.program_name}</strong> dan meraih gelar <strong>{details.champion_title}</strong>. Perjalanan Anda luar biasa!
 				</motion.p>
 				<motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1, transition: { delay: 0.8 } }}>
-					<Button size="lg" className="bg-sky-600 hover:bg-sky-700 h-14 text-lg rounded-full shadow-lg" onClick={onOpenReport}>
+					<Button size="lg" className="bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 h-14 text-lg rounded-full shadow-lg" onClick={onOpenReport}>
 						<Award className="w-6 h-6 mr-3" />
 						Lihat Laporan Kelulusan
 					</Button>
@@ -577,32 +576,51 @@ export default function ProgramDashboardRevamped() {
 		return { currentWeekData, completedWeeks, isReadOnly, todayISO, groupedTasks };
 	}, [programData, selectedWeek]);
 
-	const handleMissionComplete = async (id: string) => {
+	const handleMissionComplete = async (id: string, currentState: boolean) => {
 		if (isReadOnly || !programData || !token) return;
 
-		confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+		const newStatus = !currentState;
 
-		setGlowingMissionId(id);
-		setTimeout(() => setGlowingMissionId(null), 2000);
-
-		const originalProgramData = { ...programData };
-		const newProgramData = JSON.parse(JSON.stringify(programData));
-		const weekToUpdate = newProgramData.weeks.find((w: any) => w.week_number === selectedWeek);
-		if (weekToUpdate) {
-			const taskToUpdate = weekToUpdate.tasks.find((t: any) => t.id === id);
-			if (taskToUpdate) taskToUpdate.is_completed = !taskToUpdate.is_completed;
-			const totalTasksInWeek = weekToUpdate.tasks.length;
-			const completedTasksInWeek = weekToUpdate.tasks.filter((t: any) => t.is_completed).length;
-			weekToUpdate.completion_percentage = totalTasksInWeek > 0 ? Math.round((completedTasksInWeek / totalTasksInWeek) * 100) : 0;
+		if (newStatus) {
+			confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+			setGlowingMissionId(id);
+			setTimeout(() => setGlowingMissionId(null), 2000);
 		}
-		const overallTotalTasks = newProgramData.weeks.reduce((acc: number, week: any) => acc + week.tasks.length, 0);
-		const overallCompletedTasks = newProgramData.weeks.reduce((acc: number, week: any) => acc + week.tasks.filter((t: any) => t.is_completed).length, 0);
-		newProgramData.overall_progress.overall_completion_percentage = overallTotalTasks > 0 ? Math.round((overallCompletedTasks / overallTotalTasks) * 100) : 0;
-		setProgramData(newProgramData);
+
+		const originalProgramData = programData;
+
+		setProgramData((prevData) => {
+			if (!prevData) return null;
+
+			const updatedWeeks = prevData.weeks.map((week) => {
+				if (Number(week.week_number) !== selectedWeek) return week;
+
+				const updatedTasks = week.tasks.map((task: any) => (task.id === id ? { ...task, is_completed: newStatus } : task));
+
+				const completedTasksInWeek = updatedTasks.filter((t: any) => t.is_completed).length;
+				const totalTasksInWeek = updatedTasks.length;
+				const completion_percentage = totalTasksInWeek > 0 ? Math.round((completedTasksInWeek / totalTasksInWeek) * 100) : 0;
+
+				return { ...week, tasks: updatedTasks, completion_percentage };
+			});
+
+			const overallCompletedTasks = updatedWeeks.reduce((acc: number, week: any) => acc + week.tasks.filter((t: any) => t.is_completed).length, 0);
+			const overallTotalTasks = updatedWeeks.reduce((acc: number, week: any) => acc + week.tasks.length, 0);
+			const overall_completion_percentage = overallTotalTasks > 0 ? Math.round((overallCompletedTasks / overallTotalTasks) * 100) : 0;
+
+			return {
+				...prevData,
+				weeks: updatedWeeks,
+				overall_progress: {
+					...prevData.overall_progress,
+					overall_completion_percentage,
+				},
+			};
+		});
 
 		try {
 			await updateCompletionMissions(token, id);
-			toast.success('Misi berhasil diselesaikan! Kerja bagus!');
+			toast.success(newStatus ? 'Misi berhasil diselesaikan! Kerja bagus!' : 'Misi ditandai belum selesai.');
 		} catch (error) {
 			setProgramData(originalProgramData);
 			toast.error('Gagal memperbarui misi. Silakan coba lagi.');
@@ -720,7 +738,7 @@ export default function ProgramDashboardRevamped() {
 							</motion.div>
 							<Card className="shadow-lg rounded-2xl bg-white/80 backdrop-blur-sm border-slate-200/80">
 								<CardHeader className="mb-2">
-									<CardTitle className="flex items-center gap-3 text-2xl">
+									<CardTitle className="flex items-center gap-3 text-2xl font-bold">
 										<Flag className="w-7 h-7 text-rose-500" />
 										{isPastWeek ? `Tinjauan Misi Minggu #${selectedWeek}` : `Misi Hari Ini`}
 									</CardTitle>

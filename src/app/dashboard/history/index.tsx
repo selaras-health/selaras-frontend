@@ -26,7 +26,6 @@ import {
 	Zap,
 	Eye,
 	X,
-	List,
 	FilterX,
 	SortAsc,
 	Award,
@@ -185,13 +184,13 @@ export default function HealthyControlDashboard() {
 	const [notes, setNotes] = useState<Record<string, string>>({});
 	const [selectedRecord, setSelectedRecord] = useState<AnalysisRecord | null>(null);
 	const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
-	const [showAllHistory, setShowAllHistory] = useState(true);
+	// const [showAllHistory, setShowAllHistory] = useState(true);
 	const [sortBy, setSortBy] = useState('date-desc');
 	const [riskCategoryFilter, setRiskCategoryFilter] = useState('all');
 	const [currentPage, setCurrentPage] = useState(1);
-	const [itemsPerPage, setItemsPerPage] = useState(4);
-
-	console.log(setItemsPerPage);
+	const [itemsPerPage, setItemsPerPage] = useState(5);
+	const [programStatusFilter, setProgramStatusFilter] = useState('all');
+	console.log(setItemsPerPage, setProgramStatusFilter);
 
 	// Program Action States
 	const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -254,8 +253,6 @@ export default function HealthyControlDashboard() {
 				const recordTime = new Date(record.date).getTime();
 				return recordTime >= startTime && recordTime <= endTime;
 			});
-		} else if (!showAllHistory) {
-			baseHistory = [];
 		}
 
 		const filtered = baseHistory.filter((record) => {
@@ -269,6 +266,9 @@ export default function HealthyControlDashboard() {
 			const matchesRiskCategory = riskCategoryFilter === 'all' || record.result_details?.riskSummary?.riskCategory?.code === riskCategoryFilter;
 			if (!matchesRiskCategory) return false;
 
+			const matchesProgramStatus = programStatusFilter === 'all' || (programStatusFilter === 'no-program' && !record.program_status) || record.program_status === programStatusFilter;
+			if (!matchesProgramStatus) return false;
+
 			if (activeFilters.length === 0) return true;
 
 			const recordIndex = assessment_history.findIndex((h) => h.slug === record.slug);
@@ -277,6 +277,14 @@ export default function HealthyControlDashboard() {
 			return activeFilters.every((filter) => {
 				if (filter === 'risiko-membaik') return predecessor && record.risk_percentage < predecessor.risk_percentage;
 				if (filter === 'risiko-memburuk') return predecessor && record.risk_percentage > predecessor.risk_percentage;
+				if (filter === 'perubahan-signifikan') {
+					if (!predecessor) return false;
+					return Math.abs(record.risk_percentage - predecessor.risk_percentage) > 5;
+				}
+				if (filter === 'stabil') {
+					if (!predecessor) return true;
+					return Math.abs(record.risk_percentage - predecessor.risk_percentage) < 1;
+				}
 				if (filter === 'program-aktif') return record.program_status === 'active';
 				if (filter === 'dengan-catatan') return !!notes[record.slug];
 				return true;
@@ -284,6 +292,13 @@ export default function HealthyControlDashboard() {
 		});
 
 		const sorted = [...filtered].sort((a, b) => {
+			const getRiskChange = (record: AnalysisRecord) => {
+				const recordIndex = assessment_history.findIndex((h) => h.slug === record.slug);
+				const predecessor = assessment_history[recordIndex + 1];
+				if (!predecessor) return 0;
+				return record.risk_percentage - predecessor.risk_percentage;
+			};
+
 			switch (sortBy) {
 				case 'date-asc':
 					return new Date(a.date).getTime() - new Date(b.date).getTime();
@@ -291,6 +306,10 @@ export default function HealthyControlDashboard() {
 					return b.risk_percentage - a.risk_percentage;
 				case 'risk-asc':
 					return a.risk_percentage - b.risk_percentage;
+				case 'perbaikan-terbesar':
+					return getRiskChange(a) - getRiskChange(b);
+				case 'pemburukan-terbesar':
+					return getRiskChange(b) - getRiskChange(a);
 				case 'date-desc':
 				default:
 					return new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -316,11 +335,11 @@ export default function HealthyControlDashboard() {
 			lowest,
 			riskCategories,
 		};
-	}, [dashboardData, searchTerm, activeFilters, notes, dateRange, showAllHistory, sortBy, riskCategoryFilter, currentPage, itemsPerPage]);
+	}, [dashboardData, searchTerm, activeFilters, notes, dateRange, sortBy, riskCategoryFilter, currentPage, itemsPerPage, programStatusFilter]);
 
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [searchTerm, activeFilters, dateRange, showAllHistory, riskCategoryFilter]);
+	}, [searchTerm, activeFilters, dateRange, riskCategoryFilter]);
 
 	if (isLoading)
 		return (
@@ -346,21 +365,15 @@ export default function HealthyControlDashboard() {
 
 	const handleDateRangeSelect = (range: { start: Date | null; end: Date | null }) => {
 		setDateRange(range);
-		setShowAllHistory(false);
-	};
-
-	const handleShowAll = () => {
-		setDateRange({ start: null, end: null });
-		setShowAllHistory(true);
 	};
 
 	const handleClearFilters = () => {
 		setDateRange({ start: null, end: null });
-		setShowAllHistory(false);
 		setActiveFilters([]);
 		setSortBy('date-desc');
 		setSearchTerm('');
 		setRiskCategoryFilter('all');
+		setProgramStatusFilter('all');
 	};
 
 	// Program Action Handlers
@@ -414,8 +427,8 @@ export default function HealthyControlDashboard() {
 	if (!dashboardData || !processedData) return <div className="text-center py-20">Data tidak ditemukan.</div>;
 
 	const { summary } = dashboardData;
-	const { paginatedHistory, totalFilteredHistory, achievements, average, highest, lowest } = processedData;
-	const isFilterActive = activeFilters.length > 0 || sortBy !== 'date-desc' || (dateRange.start && dateRange.end) || showAllHistory || searchTerm !== '' || riskCategoryFilter !== 'all';
+	const { paginatedHistory, totalFilteredHistory, average, highest, lowest } = processedData;
+	const isFilterActive = activeFilters.length > 0 || sortBy !== 'date-desc' || (dateRange.start && dateRange.end) || searchTerm !== '' || riskCategoryFilter !== 'all';
 
 	return (
 		<>
@@ -427,8 +440,11 @@ export default function HealthyControlDashboard() {
 						<p className="text-lg md:text-xl text-slate-500 max-w-3xl mx-auto">Ini adalah semua riwayat kesehatan Anda.</p>
 					</motion.header>
 
-					<div className="flex flex-col lg:grid lg:grid-cols-3 lg:gap-8 items-start">
-						<main className="lg:col-span-2 space-y-8 w-full">
+					{/* --- STRUKTUR LAYOUT BARU --- */}
+					{/* Menggunakan Flexbox dengan `order` untuk kontrol responsif */}
+					<div className="flex flex-col lg:flex-row lg:gap-8 items-start">
+						{/* --- SIDEBAR KANAN (Muncul pertama di mobile, order-2 di desktop) --- */}
+						<aside className="w-full lg:w-1/3 lg:order-2 lg:sticky lg:top-[5.7rem] space-y-8">
 							<FilterControlPanel
 								searchTerm={searchTerm}
 								setSearchTerm={setSearchTerm}
@@ -441,8 +457,26 @@ export default function HealthyControlDashboard() {
 								riskCategoryFilter={riskCategoryFilter}
 								setRiskCategoryFilter={setRiskCategoryFilter}
 								riskCategories={processedData.riskCategories}
+								programStatusFilter={programStatusFilter}
+								setProgramStatusFilter={setProgramStatusFilter}
 							/>
-							<ActiveFilterDisplay dateRange={dateRange} showAllHistory={showAllHistory} onClear={handleClearFilters} filteredCount={totalFilteredHistory} />
+							<motion.section variants={itemVariants}>
+								<JourneyCalendar history={dashboardData.assessment_history} onDateRangeSelect={handleDateRangeSelect} />
+							</motion.section>
+						</aside>
+
+						{/* --- KONTEN UTAMA KIRI (Muncul kedua di mobile, order-1 di desktop) --- */}
+						<main className="w-full lg:w-2/3 lg:order-1 space-y-8 mt-8 lg:mt-0">
+							<SidebarCard title="Ringkasan Statistik" icon={<BarChart />}>
+								<div className="grid grid-cols-4 gap-4 mb-1 mt-2 ">
+									<StatCard icon={<BarChart />} title="Total Analisis" value={summary.total_assessments} />
+									<StatCard icon={<PieChart />} title="Rata-rata" value={`${formatRiskPercentage(average)}%`} />
+									<StatCard icon={<TrendingUp />} title="Tertinggi" value={`${formatRiskPercentage(highest)}%`} color="text-red-100" />
+									<StatCard icon={<ShieldCheck />} title="Terendah" value={`${formatRiskPercentage(lowest)}%`} color="text-green-100" />
+								</div>
+							</SidebarCard>
+
+							<ActiveFilterDisplay dateRange={dateRange} onClear={handleClearFilters} filteredCount={totalFilteredHistory} />
 
 							<div className="space-y-8">
 								<AnimatePresence>
@@ -474,46 +508,22 @@ export default function HealthyControlDashboard() {
 											<div className="w-24 h-24 mx-auto mb-6 rounded-full bg-rose-100 flex items-center justify-center">
 												<Calendar className="h-12 w-12 text-rose-400" />
 											</div>
-											<h3 className="text-xl font-bold text-slate-800 mb-2">Pilih Rentang Tanggal atau Hapus Filter</h3>
-											<p className="text-base text-slate-500 mb-6">Tidak ada riwayat yang cocok dengan kriteria filter Anda.</p>
-											<Button onClick={handleShowAll} variant="outline">
-												<List className="w-4 h-4 mr-2" /> Tampilkan Semua Riwayat
+											<h3 className="text-xl font-bold text-slate-800 mb-2">Tidak Ada Riwayat</h3>
+											<p className="text-base text-slate-500 mb-6">Tidak ada riwayat yang cocok dengan kriteria filter Anda. Coba hapus beberapa filter.</p>
+											<Button onClick={handleClearFilters} variant="outline">
+												<FilterX className="w-4 h-4 mr-2" /> Hapus Filter & Tampilkan Semua
 											</Button>
 										</motion.div>
 									)}
 								</AnimatePresence>
 
-								<AdvancedPaginationControls currentPage={currentPage} totalCount={processedData.totalFilteredHistory} pageSize={itemsPerPage} onPageChange={setCurrentPage} />
+								{paginatedHistory.length > 0 && <AdvancedPaginationControls currentPage={currentPage} totalCount={processedData.totalFilteredHistory} pageSize={itemsPerPage} onPageChange={setCurrentPage} />}
 							</div>
 						</main>
-
-						<aside className="w-full mt-8 lg:mt-0 lg:sticky lg:top-5 space-y-8">
-							<motion.section variants={itemVariants}>
-								<JourneyCalendar history={dashboardData.assessment_history} onDateRangeSelect={handleDateRangeSelect} />
-							</motion.section>
-							<SidebarCard title="Ringkasan Statistik" icon={<BarChart />}>
-								<div className="grid grid-cols-2 gap-4 mb-1">
-									<StatCard icon={<BarChart />} title="Total Analisis" value={summary.total_assessments} />
-									<StatCard icon={<PieChart />} title="Rata-rata" value={`${formatRiskPercentage(average)}%`} />
-									<StatCard icon={<TrendingUp />} title="Tertinggi" value={`${formatRiskPercentage(highest)}%`} color="text-red-500" />
-									<StatCard icon={<ShieldCheck />} title="Terendah" value={`${formatRiskPercentage(lowest)}%`} color="text-green-500" />
-								</div>
-							</SidebarCard>
-							<SidebarCard title="Semua Pencapaian" icon={<Trophy className="text-amber-500" />}>
-								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4 mt-1">
-									{achievements.map((ach) => (
-										<div key={ach.title} className="flex flex-col items-center text-center p-3 bg-slate-100/80 rounded-lg transition-transform hover:scale-105">
-											<div className="p-2 bg-amber-200 rounded-full mb-2">
-												<ach.icon className="w-6 h-6 text-amber-600" />
-											</div>
-											<p className="font-semibold text-sm text-slate-800">{ach.title}</p>
-										</div>
-									))}
-								</div>
-							</SidebarCard>
-						</aside>
 					</div>
 				</motion.div>
+
+				{/* --- Semua Modal tidak berubah posisinya --- */}
 				{selectedRecord && <RiwayatDetailModal key={selectedRecord.slug} record={selectedRecord} isOpen={!!selectedRecord} onClose={() => setSelectedRecord(null)} />}
 				<ComparisonModal mode={comparisonMode} onClose={() => setComparisonMode({ a: null, b: null })} />
 				<ConfirmationDialog
@@ -766,10 +776,13 @@ const JourneyCalendar = ({ history, onDateRangeSelect }: { history: AnalysisReco
 	);
 };
 
-const StatCard = ({ icon, title, value, color = 'text-slate-800' }: { icon: React.ReactElement; title: string; value: string | number; color?: string }) => (
-	<motion.div whileHover={{ scale: 1.05, y: -2 }} className="bg-white/50 p-4 rounded-xl shadow-sm text-center flex flex-col items-center justify-center gap-1">
-		<div className="text-rose-500">{React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5' })}</div>
-		<h3 className="text-xs font-semibold text-slate-500">{title}</h3>
+const StatCard = ({ icon, title, value, color = 'text-white' }: { icon: React.ReactElement; title: string; value: string | number; color?: string }) => (
+	<motion.div
+		whileHover={{ scale: 1.05, y: -2 }}
+		className="bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 p-4 rounded-xl shadow-sm text-center flex flex-col items-center justify-center gap-1"
+	>
+		<div className="text-white">{React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5' })}</div>
+		<h3 className="text-xs font-semibold text-white">{title}</h3>
 		<p className={`text-2xl font-bold ${color}`}>{value}</p>
 	</motion.div>
 );
@@ -831,7 +844,7 @@ const TimelineCard = ({ record, note, onNoteChange, onSelectForComparison, setSe
 						</div>
 						<AnimatePresence>
 							{isNoteOpen && (
-								<motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+								<motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
 									<div className="pt-4 border-t border-slate-200/80">
 										<label className="text-sm font-medium text-slate-600">Catatan Personal (hanya tersimpan di perangkat ini)</label>
 										<Textarea value={note} onChange={(e: any) => onNoteChange(record.slug, e.target.value)} placeholder="Contoh: Mulai rutin jalan pagi minggu ini..." className="mt-2 bg-white/50" />
@@ -895,13 +908,13 @@ const ActionButtons = ({ record, onSelectForComparison, setSelectedRecord, onTog
 	return (
 		<div className="flex flex-wrap gap-3 pt-4 border-t border-slate-200/80">
 			{programAction()}
-			<Button onClick={() => setSelectedRecord(record)} variant="outline" className="flex-1">
+			<Button onClick={() => setSelectedRecord(record)} variant="outline" className="flex-1 h-[44px]">
 				<Eye className="w-4 h-4 mr-2" /> Detail
 			</Button>
-			<Button variant="outline" onClick={() => onSelectForComparison(record)} className="flex-1">
+			<Button variant="outline" onClick={() => onSelectForComparison(record)} className="flex-1 h-[44px]">
 				<GitCompareArrows className="h-4 w-4 mr-2" /> Bandingkan
 			</Button>
-			<Button variant="outline" onClick={onToggleNote} className="flex-1">
+			<Button variant="outline" onClick={onToggleNote} className="flex-1 h-[44px]">
 				<MessageSquarePlus className="h-4 w-4 mr-2" /> {isNoteOpen ? 'Tutup' : 'Catatan'}
 			</Button>
 		</div>
@@ -1007,19 +1020,35 @@ const ConfirmationDialog = ({ isOpen, onClose, title, description, confirmTextVa
 		</DialogContent>
 	</Dialog>
 );
-const FilterControlPanel = ({ searchTerm, setSearchTerm, activeFilters, setActiveFilters, sortBy, setSortBy, onClear, isFilterActive, riskCategoryFilter, setRiskCategoryFilter, riskCategories }: any) => (
+const FilterControlPanel = ({
+	searchTerm,
+	setSearchTerm,
+	activeFilters,
+	setActiveFilters,
+	sortBy,
+	setSortBy,
+	onClear,
+	isFilterActive,
+	riskCategoryFilter,
+	setRiskCategoryFilter,
+	riskCategories,
+	programStatusFilter,
+	setProgramStatusFilter,
+}: any) => (
 	<motion.section variants={itemVariants} className="sticky top-5 z-20">
 		<Card className="shadow-lg rounded-2xl bg-white/80 backdrop-blur-sm border-slate-200/80 p-4">
-			<div className="flex flex-col md:flex-row items-center gap-4 mb-4">
-				<div className="relative w-full md:flex-1">
-					<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-					<Input placeholder="Cari di riwayat..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-12 text-base h-12 rounded-xl bg-white/70" />
-				</div>
+			{/* --- BARIS 1: PENCARIAN --- */}
+			<div className="relative w-full">
+				<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+				<Input placeholder="Cari di riwayat..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-12 text-base h-12 rounded-xl bg-white/70 w-full" />
+			</div>
 
+			{/* --- BARIS 2: FILTER & SORT DROPDOWNS --- */}
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
 				<Select value={riskCategoryFilter} onValueChange={setRiskCategoryFilter}>
-					<SelectTrigger className="h-12 rounded-xl w-full md:w-auto">
+					<SelectTrigger className="h-12 rounded-xl w-full">
 						<div className="flex items-center gap-2">
-							<FilterX size={16} /> Filter Kategori
+							<FilterX size={16} /> Kategori
 						</div>
 					</SelectTrigger>
 					<SelectContent>
@@ -1035,8 +1064,23 @@ const FilterControlPanel = ({ searchTerm, setSearchTerm, activeFilters, setActiv
 					</SelectContent>
 				</Select>
 
+				<Select value={programStatusFilter} onValueChange={setProgramStatusFilter}>
+					<SelectTrigger className="h-12 rounded-xl w-full">
+						<div className="flex items-center gap-2 text-black">
+							<Play size={16} /> Program
+						</div>
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">Semua Status</SelectItem>
+						<SelectItem value="active">Aktif</SelectItem>
+						<SelectItem value="completed">Selesai</SelectItem>
+						<SelectItem value="paused">Dijeda</SelectItem>
+						<SelectItem value="no-program">Tanpa Program</SelectItem>
+					</SelectContent>
+				</Select>
+
 				<Select value={sortBy} onValueChange={setSortBy}>
-					<SelectTrigger className="h-12 rounded-xl w-full md:w-auto">
+					<SelectTrigger className="h-12 rounded-xl w-full">
 						<div className="flex items-center gap-2">
 							<SortAsc size={16} /> Urutkan
 						</div>
@@ -1046,36 +1090,56 @@ const FilterControlPanel = ({ searchTerm, setSearchTerm, activeFilters, setActiv
 						<SelectItem value="date-asc">Tanggal: Terlama</SelectItem>
 						<SelectItem value="risk-desc">Risiko: Tertinggi</SelectItem>
 						<SelectItem value="risk-asc">Risiko: Terendah</SelectItem>
+						<SelectItem value="perbaikan-terbesar">Perbaikan Terbesar</SelectItem>
+						<SelectItem value="pemburukan-terbesar">Pemburukan Terbesar</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
 
-			<div className="flex flex-wrap gap-2">
-				<FilterChip
-					label="Membaik"
-					filterKey="risiko-membaik"
-					activeFilters={activeFilters}
-					onToggle={() => setActiveFilters((p: any) => (p.includes('risiko-membaik') ? p.filter((f: any) => f !== 'risiko-membaik') : [...p, 'risiko-membaik']))}
-					icon={<ArrowDown className="w-4 h-4 mr-1.5" />}
-				/>
-				<FilterChip
-					label="Memburuk"
-					filterKey="risiko-memburuk"
-					activeFilters={activeFilters}
-					onToggle={() => setActiveFilters((p: any) => (p.includes('risiko-memburuk') ? p.filter((f: any) => f !== 'risiko-memburuk') : [...p, 'risiko-memburuk']))}
-					icon={<ArrowUp className="w-4 h-4 mr-1.5" />}
-				/>
-				<FilterChip
-					label="Dengan Catatan"
-					filterKey="dengan-catatan"
-					activeFilters={activeFilters}
-					onToggle={() => setActiveFilters((p: any) => (p.includes('dengan-catatan') ? p.filter((f: any) => f !== 'dengan-catatan') : [...p, 'dengan-catatan']))}
-					icon={<MessageSquarePlus className="w-4 h-4 mr-1.5" />}
-				/>
+			{/* --- BARIS 3: FILTER CHIPS --- */}
+			<div className="pt-4 mt-4 border-t border-slate-200/60">
+				<div className="flex flex-wrap gap-2">
+					<FilterChip
+						label="Membaik"
+						filterKey="risiko-membaik"
+						activeFilters={activeFilters}
+						onToggle={() => setActiveFilters((p: any) => (p.includes('risiko-membaik') ? p.filter((f: any) => f !== 'risiko-membaik') : [...p, 'risiko-membaik']))}
+						icon={<ArrowDown className="w-4 h-4 mr-1.5" />}
+					/>
+					<FilterChip
+						label="Memburuk"
+						filterKey="risiko-memburuk"
+						activeFilters={activeFilters}
+						onToggle={() => setActiveFilters((p: any) => (p.includes('risiko-memburuk') ? p.filter((f: any) => f !== 'risiko-memburuk') : [...p, 'risiko-memburuk']))}
+						icon={<ArrowUp className="w-4 h-4 mr-1.5" />}
+					/>
+					<FilterChip
+						label="Signifikan (>5%)"
+						filterKey="perubahan-signifikan"
+						activeFilters={activeFilters}
+						onToggle={() => setActiveFilters((p: any) => (p.includes('perubahan-signifikan') ? p.filter((f: any) => f !== 'perubahan-signifikan') : [...p, 'perubahan-signifikan']))}
+						icon={<Zap className="w-4 h-4 mr-1.5" />}
+					/>
+					<FilterChip
+						label="Stabil (<1%)"
+						filterKey="stabil"
+						activeFilters={activeFilters}
+						onToggle={() => setActiveFilters((p: any) => (p.includes('stabil') ? p.filter((f: any) => f !== 'stabil') : [...p, 'stabil']))}
+						icon={<GitCompareArrows className="w-4 h-4 mr-1.5" />}
+					/>
+					<FilterChip
+						label="Dengan Catatan"
+						filterKey="dengan-catatan"
+						activeFilters={activeFilters}
+						onToggle={() => setActiveFilters((p: any) => (p.includes('dengan-catatan') ? p.filter((f: any) => f !== 'dengan-catatan') : [...p, 'dengan-catatan']))}
+						icon={<MessageSquarePlus className="w-4 h-4 mr-1.5" />}
+					/>
+				</div>
 			</div>
 
+			{/* --- TOMBOL HAPUS FILTER --- */}
 			{isFilterActive && (
-				<div className="pt-4 mt-4 border-t border-slate-200">
+				<div className="pt-4 mt-4 border-t border-slate-200/60">
 					<Button onClick={onClear} variant="ghost" className="w-full text-rose-500 hover:text-rose-600">
 						<X size={16} className="mr-2" /> Hapus Semua Filter
 					</Button>
@@ -1085,18 +1149,18 @@ const FilterControlPanel = ({ searchTerm, setSearchTerm, activeFilters, setActiv
 	</motion.section>
 );
 
-const ActiveFilterDisplay = ({ dateRange, showAllHistory, onClear, filteredCount }: { dateRange: { start: Date | null; end: Date | null }; showAllHistory: boolean; onClear: () => void; filteredCount: number }) => {
-	if (!dateRange.start && !showAllHistory) return null;
+const ActiveFilterDisplay = ({ dateRange, onClear, filteredCount }: { dateRange: { start: Date | null; end: Date | null }; onClear: () => void; filteredCount: number }) => {
+	if (!dateRange.start) return null;
 
 	let text;
-	if (showAllHistory) {
-		text = 'Menampilkan Semua Riwayat';
-	} else if (dateRange.start && dateRange.end) {
+	if (dateRange.start && dateRange.end) {
 		if (dateRange.start.toDateString() === dateRange.end.toDateString()) {
 			text = `Menampilkan: ${formatDate(dateRange.start)}`;
 		} else {
 			text = `Rentang: ${formatDate(dateRange.start)} - ${formatDate(dateRange.end)}`;
 		}
+	} else {
+		text = `Menampilkan: ${formatDate(dateRange.start)}`;
 	}
 
 	return (
