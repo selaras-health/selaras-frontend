@@ -1,7 +1,7 @@
 /* eslint-disable no-useless-escape */
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Shield, Palette, Globe, Save, Edit3, KeyRound, Loader2, AlertTriangle, EyeOff} from 'lucide-react';
+import { User, Shield, Palette, Globe, Save, Edit3, KeyRound, Loader2, AlertTriangle, EyeOff } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -186,15 +186,15 @@ const ProfileSection = () => {
 				</div>
 				<Separator />
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-					<ProfileField label="Nama Depan" value={profileData.first_name} isEditing={isEditing} onChange={(e) => setProfileData((p) => ({ ...p, first_name: e.target.value }))} />
-					<ProfileField label="Nama Belakang" value={profileData.last_name} isEditing={isEditing} onChange={(e) => setProfileData((p) => ({ ...p, last_name: e.target.value }))} />
+					<ProfileField label="Nama Depan" value={profileData.first_name} isEditing={isEditing} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProfileData((p) => ({ ...p, first_name: e.target.value }))} />
+					<ProfileField label="Nama Belakang" value={profileData.last_name} isEditing={isEditing} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProfileData((p) => ({ ...p, last_name: e.target.value }))} />
 					<ProfileField
 						label="Tanggal Lahir"
 						value={profileData.date_of_birth ? formatDate(profileData.date_of_birth) : '-'}
 						isEditing={isEditing}
 						type="date"
 						editValue={formatDateForInput(profileData.date_of_birth)}
-						onChange={(e) => setProfileData((p) => ({ ...p, date_of_birth: e.target.value }))}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProfileData((p) => ({ ...p, date_of_birth: e.target.value }))}
 					/>
 					<div>
 						<Label className="font-semibold text-slate-600">Jenis Kelamin</Label>
@@ -264,7 +264,8 @@ const ProfileField = ({ label, value, isEditing, type = 'text', editValue, onCha
 );
 
 const PreferencesSection = () => {
-	const { user } = useAuth();
+	const auth = useAuth();
+	const user = auth?.user;
 	const [preferences, setPreferences] = useState({
 		language: user?.language || 'id',
 		theme: 'system',

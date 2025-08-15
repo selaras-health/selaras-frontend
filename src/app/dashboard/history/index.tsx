@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import {
 	AlertTriangle,
 	ArrowDown,
@@ -45,6 +45,7 @@ import { useNavigate } from 'react-router-dom';
 import { startNewProgram, updateProgramStatus } from '@/hooks/api/program';
 import { toast } from 'sonner';
 import { DOTS, usePagination } from '@/hooks/usePagination';
+import type { AnalysisRecord } from '@/types';
 
 type HealthTrend = { direction: string; change_value: number; text: string };
 type ProgramProgress = { current_week: number; total_weeks: number; current_day_in_program: number; total_days_in_program: number };
@@ -56,7 +57,6 @@ type LatestAssessmentDetails = {
 	actionPlan: { priorityLifestyleActions: PriorityAction[]; medicalConsultation: { suggestedTests: SuggestedTest[]; recommendationLevel: { code: string; description: string } }; impactSimulation: ImpactSimulation };
 	riskSummary: { riskPercentage: number };
 };
-type AnalysisRecord = { slug: string; date: string; risk_percentage: number; result_details: any; program_slug: string | null; program_status: 'active' | 'completed' | 'paused' | null };
 type DashboardData = {
 	program_overview: ProgramOverview;
 	summary: { total_assessments: number; last_assessment_date_human: string; latest_status: { category_code: string; category_title: string; description: string }; health_trend: HealthTrend };
@@ -65,8 +65,8 @@ type DashboardData = {
 	assessment_history: AnalysisRecord[];
 };
 
-const pageVariants = { initial: { opacity: 0 }, animate: { opacity: 1, transition: { duration: 0.5, ease: 'easeInOut' } } };
-const itemVariants = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeInOut' } } };
+const pageVariants: Variants = { initial: { opacity: 0 }, animate: { opacity: 1, transition: { duration: 0.5, ease: 'easeInOut' } } };
+const itemVariants: Variants = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeInOut' } } };
 
 const formatDate = (dateString: string | Date): string => {
 	if (dateString instanceof Date) {
@@ -448,7 +448,12 @@ export default function HealthyControlDashboard() {
 								<AnimatePresence>
 									{paginatedHistory.length > 0 ? (
 										paginatedHistory.map((record) => (
-											<div key={record.slug} ref={(el) => (timelineRefs.current[record.slug] = el)}>
+											<div
+												key={record.slug}
+												ref={(el) => {
+													timelineRefs.current[record.slug] = el;
+												}}
+											>
 												<TimelineCard
 													record={record}
 													note={notes[record.slug] || ''}
@@ -478,12 +483,7 @@ export default function HealthyControlDashboard() {
 									)}
 								</AnimatePresence>
 
-								<AdvancedPaginationControls
-									currentPage={currentPage}
-									totalCount={processedData.totalFilteredHistory}
-									pageSize={itemsPerPage}
-									onPageChange={setCurrentPage}
-								/>
+								<AdvancedPaginationControls currentPage={currentPage} totalCount={processedData.totalFilteredHistory} pageSize={itemsPerPage} onPageChange={setCurrentPage} />
 							</div>
 						</main>
 
@@ -766,9 +766,9 @@ const JourneyCalendar = ({ history, onDateRangeSelect }: { history: AnalysisReco
 	);
 };
 
-const StatCard = ({ icon, title, value, color = 'text-slate-800' }: { icon: React.ReactNode; title: string; value: string | number; color?: string }) => (
+const StatCard = ({ icon, title, value, color = 'text-slate-800' }: { icon: React.ReactElement; title: string; value: string | number; color?: string }) => (
 	<motion.div whileHover={{ scale: 1.05, y: -2 }} className="bg-white/50 p-4 rounded-xl shadow-sm text-center flex flex-col items-center justify-center gap-1">
-		<div className="text-rose-500">{React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}</div>
+		<div className="text-rose-500">{React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5' })}</div>
 		<h3 className="text-xs font-semibold text-slate-500">{title}</h3>
 		<p className={`text-2xl font-bold ${color}`}>{value}</p>
 	</motion.div>

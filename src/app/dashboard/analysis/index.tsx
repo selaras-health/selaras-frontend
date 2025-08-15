@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, type ForwardRefExoticComponent, type RefAttributes } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-import { ChevronLeft, Heart, CheckCircle, Sparkles, ArrowRight, Loader, User, MapPin, Info, ClipboardCheck, BrainCircuit, ShieldCheck, FileClock, PersonStanding } from 'lucide-react';
+import { ChevronLeft, Heart, CheckCircle, Sparkles, ArrowRight, Loader, User, MapPin, Info, ClipboardCheck, BrainCircuit, ShieldCheck, FileClock, PersonStanding, type LucideProps } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,7 +85,18 @@ export default function AnalisisPageRevamped() {
 
 	// --- DYNAMIC QUESTION FLOW ---
 	const questions = useMemo(() => {
-		const baseQuestions = [
+		type Question = {
+			type: string;
+			field?: string;
+			title?: string;
+			icon?: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
+			options?: string[];
+			info?: string;
+			inputType?: string; // Add inputType to the type definition
+			unit?: string; // Added unit to the type definition
+		};
+	
+		const baseQuestions: Question[] = [
 			{ type: 'welcome' },
 			{ type: 'info', field: 'age', title: 'Usia Anda', icon: User },
 			{ type: 'info', field: 'gender', title: 'Jenis Kelamin', icon: User },
@@ -185,7 +196,7 @@ export default function AnalisisPageRevamped() {
 	const isCurrentQuestionComplete = useMemo(() => {
 		if (!questions[questionIndex]) return false;
 		const currentQuestion = questions[questionIndex];
-		const { type, field, key } = currentQuestion;
+		const { type, field, key } = currentQuestion as { type: string; field: string; key?: string };
 
 		switch (type) {
 			case 'welcome':
@@ -201,7 +212,7 @@ export default function AnalisisPageRevamped() {
 				}
 				return !!value;
 			case 'healthMetric':
-				return formData.healthProfile[key]?.completed || false;
+				return key ? formData.healthProfile[key]?.completed || false : false;
 			default:
 				return false;
 		}
@@ -388,11 +399,11 @@ const RiskRegionInfoPopover = () => (
 
 const InfoSlide = ({ question, value, onNext, onBack }: any) => {
 	// Definisikan fungsi helper di sini
-	const capitalizeWords = (str) => {
+	const capitalizeWords = (str: string) => {
 		if (!str) return ''; // Menangani jika value kosong atau null
 		return str
 			.split(' ')
-			.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+			.map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
 			.join(' ');
 	};
 

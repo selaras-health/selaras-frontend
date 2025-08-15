@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { Target, CheckCircle2, Sparkles, Trophy, Pause, Trash2, Loader2, Award, XCircle, Calendar, Clock, Flag, Info, Star, BookOpen, Coffee, Flame, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -54,7 +54,7 @@ interface GraduationDetails {
 }
 
 // --- ANIMATION VARIANTS ---
-const containerVariants = {
+const containerVariants: Variants = {
 	hidden: { opacity: 0 },
 	visible: {
 		opacity: 1,
@@ -65,7 +65,7 @@ const containerVariants = {
 	},
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
 	hidden: { opacity: 0, y: 20 },
 	visible: {
 		opacity: 1,
@@ -531,6 +531,11 @@ export default function ProgramDashboardRevamped() {
 						throw new Error('No active program found.');
 					}
 				}
+
+				if (!slugToFetch) {
+					throw new Error('No active program slug could be determined.');
+				}
+
 				const response = await getProgramDetails(slugToFetch, token);
 				if (response && response.data) {
 					const dataWithStreak = { ...response.data, streak: response.data.streak || 0 };
@@ -628,6 +633,16 @@ export default function ProgramDashboardRevamped() {
 			toast.error(`Gagal ${action} program.`, { id: toastId });
 			console.error(error);
 		}
+	};
+
+	const handleEditThreadTitle = (threadId: string, newTitle: string) => {
+		console.log(`TODO: Edit thread ${threadId} menjadi "${newTitle}"`);
+		toast.info('Fitur edit judul diskusi belum diimplementasikan.');
+	};
+
+	const handleDeleteThread = (threadId: string) => {
+		console.log(`TODO: Hapus thread ${threadId}`);
+		toast.info('Fitur hapus diskusi belum diimplementasikan.');
 	};
 
 	if (isLoading) {
@@ -777,8 +792,7 @@ export default function ProgramDashboardRevamped() {
 								onWeekSelect={(week) => setSelectedWeek(week)}
 								selectedWeek={selectedWeek || 0}
 							/>
-
-							<DiscussionHub programSlug={programData.slug} discussions={programData.threads} isReadOnly={isReadOnly} />
+							<DiscussionHub programSlug={programData.slug} discussions={programData.threads} isReadOnly={isReadOnly} onEditTitle={handleEditThreadTitle} onDeleteThread={handleDeleteThread} />{' '}
 						</div>
 					</div>
 				</motion.div>

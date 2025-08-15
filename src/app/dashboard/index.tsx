@@ -1,29 +1,24 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import {
 	AlertTriangle,
 	ArrowDown,
 	ArrowRight,
 	BarChart,
-	BookOpen,
 	CheckCircle2,
 	GitCompareArrows,
 	HeartPulse,
 	History,
 	Loader2,
-	MessageSquarePlus,
 	PieChart,
-	Play,
 	ShieldCheck,
-	Sparkles,
 	Star,
 	TrendingUp,
 	Trophy,
 	XCircle,
 	Zap,
-	Eye,
 	X,
 	Award,
 	ArrowUp,
@@ -41,6 +36,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useNavigate } from 'react-router-dom';
 import { startNewProgram, updateProgramStatus } from '@/hooks/api/program';
 import { toast } from 'sonner';
+import type { AnalysisRecord } from '@/types';
 
 // --- TYPE DEFINITIONS (Based on new API structure) ---
 type HealthTrend = { direction: string; change_value: number; text: string };
@@ -53,7 +49,6 @@ type LatestAssessmentDetails = {
 	actionPlan: { priorityLifestyleActions: PriorityAction[]; medicalConsultation: { suggestedTests: SuggestedTest[]; recommendationLevel: { code: string; description: string } }; impactSimulation: ImpactSimulation };
 	riskSummary: { riskPercentage: number };
 };
-type AnalysisRecord = { slug: string; date: string; risk_percentage: number; result_details: any; program_slug: string | null; program_status: 'active' | 'completed' | 'paused' | null };
 type DashboardData = {
 	program_overview: ProgramOverview;
 	summary: { total_assessments: number; last_assessment_date_human: string; latest_status: { category_code: string; category_title: string; description: string }; health_trend: HealthTrend };
@@ -63,12 +58,11 @@ type DashboardData = {
 };
 
 // --- ANIMATION VARIANTS ---
-const pageVariants = { initial: { opacity: 0 }, animate: { opacity: 1, transition: { duration: 0.5, ease: 'easeInOut' } } };
-const itemVariants = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeInOut' } } };
+const pageVariants: Variants = { initial: { opacity: 0 }, animate: { opacity: 1, transition: { duration: 0.5, ease: 'easeInOut' } } };
+const itemVariants: Variants = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeInOut' } } };
 
 // --- HELPER FUNCTIONS ---
 const formatDate = (dateString: string | Date) => new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
-const formatDay = (dateString: string) => new Date(dateString).toLocaleDateString('id-ID', { weekday: 'long' });
 const formatRiskPercentage = (value: number | null | undefined): string => (value || 0).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const getRiskStyling = (code?: string) => {
 	switch (code) {
@@ -117,6 +111,7 @@ export default function HealthyControlDashboard() {
 	const [isNewProgramLoading, setIsNewProgramLoading] = useState(false);
 	const [programSlug, setProgramSlug] = useState<string | null>(null);
 	const [showResumeConfirmModal, setShowResumeConfirmModal] = useState(false);
+	console.log(setProgramSlug);
 
 	// --- DATA FETCHING & INITIALIZATION ---
 	useEffect(() => {
@@ -232,7 +227,6 @@ export default function HealthyControlDashboard() {
 		setRiskCategoryFilter('all');
 	};
 
-
 	const handleConfirmNewProgram = () => {
 		if (confirmText === 'LANGKAH BARU') {
 			setShowConfirmModal(false);
@@ -280,9 +274,8 @@ export default function HealthyControlDashboard() {
 
 	const { summary, program_overview, latest_assessment_details } = dashboardData;
 	const { chartData, achievements, filteredHistory, average, highest, lowest } = processedData;
-	const isFilterActive = activeFilters.length > 0 || sortBy !== 'date-desc' || (dateRange.start && dateRange.end) || showAllHistory || searchTerm !== '' || riskCategoryFilter !== 'all';
 
-	const removeArrowsFromText = (text) => {
+	const removeArrowsFromText = (text: string) => {
 		if (typeof text !== 'string') {
 			return text;
 		}
@@ -490,7 +483,7 @@ const TabButton = ({ label, isActive, onClick }: { label: string; isActive: bool
 );
 
 const ProgramCard = ({ program }: { program: ProgramOverview }) => {
-	const { status, title, progress, slug, is_active } = program;
+	const { status, progress, slug, is_active } = program;
 	const current_day_in_program = progress?.current_day_in_program * -1 || 0;
 
 	const getProgressPercentage = () => {
@@ -507,7 +500,6 @@ const ProgramCard = ({ program }: { program: ProgramOverview }) => {
 	};
 
 	const progressPercentage = getProgressPercentage();
-	console.log(`Program progress for ${title}: ${progressPercentage}%`);
 
 	return (
 		<motion.section variants={itemVariants}>
@@ -534,9 +526,9 @@ const ProgramCard = ({ program }: { program: ProgramOverview }) => {
 // (StatCard, FilterChip, TimelineCard, ComparisonModal, ConfirmationDialog etc.)
 // These are included below for completeness and to ensure no errors.
 
-const StatCard = ({ icon, title, value, color = 'text-slate-800' }: { icon: React.ReactNode; title: string; value: string | number; color?: string }) => (
+const StatCard = ({ icon, title, value, color = 'text-slate-800' }: { icon: React.ReactElement; title: string; value: string | number; color?: string }) => (
 	<motion.div whileHover={{ scale: 1.05, y: -2 }} className="bg-white/50 p-4 rounded-xl shadow-sm text-center flex flex-col items-center justify-center gap-1">
-		<div className="text-rose-500">{React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}</div>
+		<div className="text-rose-500">{React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5' })}</div>
 		<h3 className="text-xs font-semibold text-slate-500">{title}</h3>
 		<p className={`text-2xl font-bold ${color}`}>{value}</p>
 	</motion.div>
@@ -552,59 +544,6 @@ const SidebarCard = ({ title, icon, children }: { title: string; icon: React.Rea
 		<CardContent>{children}</CardContent>
 	</Card>
 );
-
-
-const ActionButtons = ({ record, onSelectForComparison, setSelectedRecord, onToggleNote, isNoteOpen, onStartNewProgram, onResumeProgram, navigate }: any) => {
-	const programAction = () => {
-		switch (record.program_status) {
-			case 'active':
-				return (
-					<Button
-						onClick={() => navigate('/dashboard/program')}
-						className="flex-1 bg-gradient-to-r from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 text-white font-semibold shadow-md hover:shadow-lg transition-all rounded-lg h-11"
-					>
-						<ArrowRight className="w-4 h-4 mr-2" /> Lanjutkan
-					</Button>
-				);
-			case 'completed':
-				return (
-					<Button
-						onClick={() => navigate(`/dashboard/program/${record.program_slug}`)}
-						className="flex-1 bg-gradient-to-r from-sky-400 via-blue-500 to-blue-600 text-white font-semibold shadow-md hover:shadow-lg transition-all rounded-lg h-11"
-					>
-						<BookOpen className="w-4 h-4 mr-2" /> Laporan
-					</Button>
-				);
-			case 'paused':
-				return (
-					<Button onClick={() => onResumeProgram(record)} className="flex-1 bg-gradient-to-r from-yellow-400 via-amber-500 to-amber-600 text-white font-semibold shadow-md hover:shadow-lg transition-all rounded-lg h-11">
-						<Play className="w-4 h-4 mr-2" /> Aktifkan
-					</Button>
-				);
-			default:
-				return (
-					<Button onClick={() => onStartNewProgram(record.slug)} className="flex-1 bg-gradient-to-r from-teal-400 via-emerald-500 to-emerald-600 text-white font-semibold shadow-md hover:shadow-lg transition-all rounded-lg h-11">
-						<Sparkles className="w-4 h-4 mr-2" /> Mulai Program
-					</Button>
-				);
-		}
-	};
-
-	return (
-		<div className="flex flex-wrap gap-3 pt-4 border-t border-slate-200/80">
-			{programAction()}
-			<Button onClick={() => setSelectedRecord(record)} variant="outline" className="flex-1">
-				<Eye className="w-4 h-4 mr-2" /> Detail
-			</Button>
-			<Button variant="outline" onClick={() => onSelectForComparison(record)} className="flex-1">
-				<GitCompareArrows className="h-4 w-4 mr-2" /> Bandingkan
-			</Button>
-			<Button variant="outline" onClick={onToggleNote} className="flex-1">
-				<MessageSquarePlus className="h-4 w-4 mr-2" /> {isNoteOpen ? 'Tutup' : 'Catatan'}
-			</Button>
-		</div>
-	);
-};
 
 const ComparisonModal = ({ mode, onClose }: { mode: { a: AnalysisRecord | null; b: AnalysisRecord | null }; onClose: () => void }) => {
 	if (!mode.a || !mode.b) return null;
@@ -657,17 +596,6 @@ const ComparisonColumn = ({ record, isLatest = false }: { record: AnalysisRecord
 		</div>
 	</div>
 );
-
-const Textarea = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
-	<textarea {...props} className={`w-full p-2 border rounded-md border-slate-300 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition ${props.className}`} rows={3} />
-);
-
-const ProgramStatusBadge = ({ status }: { status: string }) => {
-	const styles = { active: 'bg-rose-100 text-rose-800', completed: 'bg-green-100 text-green-800', paused: 'bg-yellow-100 text-yellow-800', default: 'bg-slate-100 text-slate-700' };
-	const text = { active: 'Program Aktif', completed: 'Selesai', paused: 'Dijeda', default: 'Belum Dimulai' };
-	const currentStatus = status as keyof typeof styles;
-	return <Badge className={`${styles[currentStatus] || styles.default} font-medium border-transparent`}>{text[currentStatus] || text.default}</Badge>;
-};
 
 const ConfirmationDialog = ({ isOpen, onClose, title, description, confirmTextValue, onConfirmTextChange, confirmKeyword, onConfirm, isLoading, loadingText, confirmButtonText, confirmButtonVariant = 'destructive' }: any) => (
 	<Dialog open={isOpen} onOpenChange={onClose}>
