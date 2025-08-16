@@ -267,14 +267,14 @@ export function RiwayatDetailModal({ record, isOpen, onClose }: RiwayatDetailMod
 									</a>
 								))}
 							</nav>
-							{/* <div className="hidden md:block mt-auto space-y-2">
-								<Button variant="outline" className="w-full" onClick={handleExportPDF}>
+							<div className="hidden md:block mt-auto space-y-2">
+								{/* <Button variant="outline" className="w-full" onClick={handleExportPDF}>
 									<Download className="w-4 h-4 mr-2" /> Ekspor PDF
-								</Button>
+								</Button> */}
 								<Button variant="ghost" onClick={onClose} className="w-full text-slate-500">
 									<X className="w-4 h-4 mr-2" /> Tutup Laporan
 								</Button>
-							</div> */}
+							</div>
 						</motion.aside>
 						{/* --- Right Column (Scrollable Content) --- */}
 						<main ref={contentRef} className="w-full md:w-3/4 flex-grow overflow-y-auto p-6 md:p-10">
