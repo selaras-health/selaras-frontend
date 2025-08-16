@@ -45,4 +45,13 @@ const ReplyRenderer = ({ components }: { components: ReplyComponent[] }) => (
   </div>
 )
 
+
+// return (
+//   <p className="  leading-relaxed mb-4">
+//     <span className="text-xl text-slate-700 font-semibold">{greeting}</span>
+//     <div className="text-base text-slate-500 mt-4">{summary}</div>
+//   </p>
+// );
+// };
+
 export default ReplyRenderer

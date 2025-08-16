@@ -1,903 +1,718 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
 	X,
 	Calendar,
-	AlertTriangle,
-	CheckCircle,
 	TrendingUp,
 	Activity,
 	Heart,
 	Target,
 	Zap,
 	BookOpen,
-	MapPin,
 	MessageCircle,
-	ArrowRight,
 	Stethoscope,
 	TestTube,
 	Award,
 	Info,
 	ChevronDown,
-	ChevronUp,
-	Brain,
-	FileText,
 	User,
-	LocateIcon as LocationIcon,
 	Cigarette,
 	Droplets,
 	TestTube2,
-	Calculator,
-	HelpCircle,
+	ShieldCheck,
+	AlertTriangle,
+	Sparkles,
+	FileText,
+	CheckCircle,
+	MapPin,
+	ArrowRight,
+	Download,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useState } from 'react';
-import type { AnalysisRecord, RiwayatDetailModalProps } from '@/types';
 
+// --- TYPE DEFINITIONS ---
+type AnalysisRecord = any;
+interface RiwayatDetailModalProps {
+	record: AnalysisRecord | null;
+	isOpen: boolean;
+	onClose: () => void;
+}
+
+// --- ANIMATION VARIANTS ---
 const modalVariants = {
-	hidden: { opacity: 0, scale: 0.95, y: 20 },
-	visible: { opacity: 1, scale: 1, y: 0 },
-	exit: { opacity: 0, scale: 0.95, y: 20 },
+	hidden: { opacity: 0, y: 50, scale: 0.95 },
+	visible: {
+		opacity: 1,
+		y: 0,
+		scale: 1,
+		transition: {
+			duration: 0.4,
+			ease: [0.25, 1, 0.5, 1],
+			staggerChildren: 0.1,
+		},
+	},
+	exit: { opacity: 0, y: 50, scale: 0.95, transition: { duration: 0.3, ease: [0.5, 0, 0.75, 0] } },
 };
-
 const overlayVariants = {
 	hidden: { opacity: 0 },
-	visible: { opacity: 1 },
-	exit: { opacity: 0 },
+	visible: { opacity: 1, transition: { duration: 0.3 } },
+	exit: { opacity: 0, transition: { duration: 0.3 } },
+};
+const contentContainerVariants = {
+	hidden: {},
+	visible: {
+		transition: {
+			staggerChildren: 0.07,
+		},
+	},
+};
+const itemVariants = {
+	hidden: { opacity: 0, y: 20 },
+	visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
 };
 
-const tabContentVariants = {
-	hidden: { opacity: 0, x: 20 },
-	visible: { opacity: 1, x: 0 },
-	exit: { opacity: 0, x: -20 },
-};
-
+// --- MAIN COMPONENT: RiwayatDetailModal ---
 export function RiwayatDetailModal({ record, isOpen, onClose }: RiwayatDetailModalProps) {
-	const [expandedMyths, setExpandedMyths] = useState<number[]>([]);
-	const [expandedEstimations, setExpandedEstimations] = useState<number[]>([]);
-	const [activeTab, setActiveTab] = useState('analysis');
+	const [activeSection, setActiveSection] = useState('summary');
+	const contentRef = useRef<HTMLDivElement | null>(null);
+	const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
-	if (!record) return null;
-
-	const getUserInputData = (record: AnalysisRecord) => {
-		const coreData = {
-			age: record.generated_value.age,
-			gender: record.generated_value.sex_label,
-			smokingStatus: record.input.smoking_status === 'Bukan perokok saat ini' ? 'never' : 'current',
-			region: 'Indonesia', // fallback default karena tidak disediakan API
-			diabetesStatus: record.input.has_diabetes ? 'yes' : 'no',
-			diabetesAge: record.input.has_diabetes ? record.input.age_at_diabetes_diagnosis : undefined,
+	useEffect(() => {
+		if (!isOpen || !contentRef.current) return;
+		const mainContent = contentRef.current;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) {
+						setActiveSection(entry.target.id);
+					}
+				});
+			},
+			{ root: mainContent, rootMargin: '-40% 0px -60% 0px', threshold: 0 }
+		);
+		const currentRefs = sectionRefs.current;
+		Object.values(currentRefs).forEach((section) => {
+			if (section) observer.observe(section);
+		});
+		return () => {
+			Object.values(currentRefs).forEach((section) => {
+				if (section) observer.unobserve(section);
+			});
 		};
+	}, [isOpen, record]);
 
-		const healthMetrics = {
-			sbp: record.generated_value.sbp,
-			totalCholesterol: record.generated_value.tchol,
-			hdl: record.generated_value.hdl,
-			hba1c: record.generated_value.hba1c !== undefined ? record.generated_value.hba1c : null,
-			scr: record.generated_value.scr !== undefined ? record.generated_value.scr : null,
-		};
-
-		const estimatedValues: string[] = [];
-		const estimatedParameters = [];
-
-		// Estimasi SBP
-		if (record.input.sbp_input_type === 'proxy' && record.input.sbp_proxy_answers) {
-			estimatedValues.push('sbp');
-			estimatedParameters.push({
-				name: 'Tekanan Darah (SBP)',
-				value: `${record.generated_value.sbp}`,
-				unit: 'mmHg',
-				estimationMethod: 'Berdasarkan jawaban proxy terkait tekanan darah',
-				proxyResponses: Object.entries(record.input.sbp_proxy_answers)?.map(([qKey, answer]) => ({
-					question: qKey.replace('q_', '').replace(/_/g, ' ').toUpperCase(),
-					// question: qKey.replace('q_', '').replace(/_/g, ' ').toUpperCase(),
-					answer: answer,
-				})),
-			});
-		}
-
-		// Estimasi TCHOL
-		if (record.input.tchol_input_type === 'proxy' && record.input.tchol_proxy_answers) {
-			estimatedValues.push('totalCholesterol');
-			estimatedParameters.push({
-				name: 'Kolesterol Total',
-				value: `${record.generated_value.tchol}`,
-				unit: 'mmol/L',
-				estimationMethod: 'Berdasarkan jawaban proxy terkait kolesterol',
-				proxyResponses: Object.entries(record.input.tchol_proxy_answers)?.map(([qKey, answer]) => ({
-					question: qKey.replace('q_', '').replace(/_/g, ' ').toUpperCase(),
-					answer: answer,
-				})),
-			});
-		}
-
-		// Estimasi HDL
-		if (record.input.hdl_input_type === 'proxy' && record.input.hdl_proxy_answers) {
-			estimatedValues.push('hdl');
-			estimatedParameters.push({
-				name: 'Kolesterol HDL',
-				value: `${record.generated_value.hdl}`,
-				unit: 'mmol/L',
-				estimationMethod: 'Berdasarkan jawaban proxy terkait HDL',
-				proxyResponses: Object.entries(record.input.hdl_proxy_answers)?.map(([qKey, answer]) => ({
-					question: qKey.replace('q_', '').replace(/_/g, ' ').toUpperCase(),
-					answer: answer,
-				})),
-			});
-		}
-
-		// Estimasi HBA1C
-		if (record.generated_value.hba1c !== undefined) {
-			estimatedValues.push('hba1c');
-			estimatedParameters.push({
-				name: 'HBA1C',
-				value: `${record.generated_value.hba1c}`,
-				unit: '%',
-				estimationMethod: 'Dihitung berdasarkan data diabetes dan usia diagnosis',
-				proxyResponses: [],
-			});
-		}
-
-		// Estimasi Serum Creatinine
-		if (record.generated_value.scr !== undefined) {
-			estimatedValues.push('serumCreatinine');
-			estimatedParameters.push({
-				name: 'Serum Creatinine',
-				value: `${record.generated_value.scr}`,
-				unit: 'mg/dL',
-				estimationMethod: 'Dihitung berdasarkan data diabetes dan usia diagnosis',
-				proxyResponses: [],
-			});
-		}
-
-		return {
-			coreData,
-			healthMetrics,
-			estimatedValues,
-			estimatedParameters,
-		};
+	const handleExportPDF = () => {
+		window.print();
 	};
 
-	const getDetailedAnalysis = (record: AnalysisRecord) => {
-		const riskSummary = record.result_details.riskSummary;
-
-		console.log('Risk Summary:', riskSummary);
-		console.log(record.result_details);
-
-		return {
-			riskSummary: {
-				riskPercentage: riskSummary.riskPercentage,
-				riskCategory: {
-					level: riskSummary.riskCategory.code,
-					label: riskSummary.riskCategory.title,
+	const processedData = useMemo(() => {
+		if (!record) return null;
+		const getUserInputData = (rec: AnalysisRecord) => {
+			const { generated_value, input } = rec;
+			const coreData = {
+				age: generated_value.age,
+				gender: generated_value.sex_label,
+				smokingStatus: input.smoking_status === 'Bukan perokok saat ini' ? 'never' : 'current',
+				region: 'Indonesia',
+				diabetesStatus: input.has_diabetes ? 'yes' : 'no',
+				diabetesAge: input.has_diabetes ? input.age_at_diabetes_diagnosis : undefined,
+			};
+			const healthMetrics = {
+				sbp: generated_value.sbp,
+				totalCholesterol: generated_value.tchol,
+				hdl: generated_value.hdl,
+				hba1c: generated_value.hba1c,
+				scr: generated_value.scr,
+			};
+			const estimatedParameters: any[] = [];
+			const processProxy = (inputType: string, proxyAnswers: any, name: string, value: any, unit: string, method: string) => {
+				if (inputType === 'proxy' && proxyAnswers) {
+					estimatedParameters.push({
+						name,
+						value: `${value}`,
+						unit,
+						estimationMethod: method,
+						proxyResponses: Object.entries(proxyAnswers).map(([qKey, answer]) => ({
+							question: qKey
+								.replace('q_', '')
+								.replace(/_/g, ' ')
+								.replace(/\b\w/g, (l) => l.toUpperCase()),
+							answer,
+						})),
+					});
+				}
+			};
+			processProxy(input.hdl_input_type, input.hdl_proxy_answers, 'Kolesterol HDL', generated_value.hdl, 'mg/dL', 'Berdasarkan jawaban proxy terkait HDL');
+			processProxy(input.sbp_input_type, input.sbp_proxy_answers, 'Tekanan Darah (SBP)', generated_value.sbp, 'mmHg', 'Berdasarkan jawaban proxy terkait tekanan darah');
+			processProxy(input.tchol_input_type, input.tchol_proxy_answers, 'Kolesterol Total', generated_value.tchol, 'mg/dL', 'Berdasarkan jawaban proxy terkait kolesterol');
+			return { coreData, healthMetrics, estimatedParameters };
+		};
+		const getDetailedAnalysis = (rec: AnalysisRecord) => {
+			const { riskSummary, actionPlan, personalizedEducation, closingStatement } = rec.result_details;
+			return {
+				riskSummary: {
+					riskPercentage: parseFloat(riskSummary.riskPercentage.toString()),
+					riskCategory: riskSummary.riskCategory,
+					executiveSummary: riskSummary.executiveSummary,
+					primaryContributors: riskSummary.primaryContributors || [],
+					contextualRiskExplanation: riskSummary.contextualRiskExplanation,
+					positiveFactors: riskSummary.positiveFactors || [],
 				},
-				executiveSummary: riskSummary.executiveSummary,
-				primaryContributors: riskSummary.primaryContributors?.map((c) => ({
-					title: c.title,
-					severity: c.severity,
-					explanation: c.description,
-				})),
-				contextualRiskExplanation: riskSummary.contextualRiskExplanation,
-				positiveFactors: riskSummary.positiveFactors,
-			},
-			actionPlan: {
-				medicalConsultation: {
-					recommendationLevel: record.result_details.actionPlan.medicalConsultation.recommendationLevel.code,
-					explanation: record.result_details.actionPlan.medicalConsultation.recommendationLevel.description,
-					suggestedTests: record.result_details.actionPlan.medicalConsultation.suggestedTests,
+				actionPlan: {
+					medicalConsultation: actionPlan.medicalConsultation,
+					lifestyleActions: (actionPlan.priorityLifestyleActions || []).sort((a: any, b: any) => a.rank - b.rank),
+					impactSimulation: {
+						message: actionPlan.impactSimulation.message,
+						timeEstimation: actionPlan.impactSimulation.timeEstimation,
+						riskAfterChange: parseFloat(actionPlan.impactSimulation.riskAfterChange.toString()),
+					},
 				},
-				lifestyleActions: record.result_details.actionPlan.priorityLifestyleActions?.map((action) => ({
-					title: action.title,
-					description: action.description,
-					targetGoal: action.target,
-					estimatedImpact: action.estimatedImpact,
-					priority: action.rank,
-				})),
-				impactSimulation: {
-					message: record.result_details.actionPlan.impactSimulation.message,
-					predictedRiskReduction: record.result_details.actionPlan.impactSimulation.riskAfterChange,
+				personalizedEducation: {
+					keyHealthMetrics: personalizedEducation.keyHealthMetrics || [],
+					mythsVsFacts: personalizedEducation.mythVsFact || [],
 				},
-			},
-			personalizedEducation: {
-				keyHealthMetrics: record.result_details.personalizedEducation.keyHealthMetrics?.map((item) => ({
-					name: item.title,
-					userValue: item.yourValue,
-					idealRange: item.idealRange,
-					status: item.code,
-				})),
-				mythsVsFacts: record.result_details.personalizedEducation.mythVsFact,
-			},
-			closingStatement: {
-				motivationalMessage: record.result_details.closingStatement.motivationalMessage,
-				firstStepToTake: record.result_details.closingStatement.firstStepAction,
-				localContextTip: record.result_details.closingStatement.localContextTip,
-			},
+				closingStatement,
+			};
 		};
-	};
+		return { userInput: getUserInputData(record), analysis: getDetailedAnalysis(record) };
+	}, [record]);
 
-	const detailedAnalysis = getDetailedAnalysis(record);
-	const userInputData = getUserInputData(record);
+	if (!isOpen || !record || !processedData) return null;
 
-	const getRiskColor = (level: string) => {
-		switch (level.toLowerCase()) {
-			case 'low_moderate':
-				return 'text-green-600 bg-green-50 border-green-200';
-			case 'high':
-				return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-			case 'very_high':
-				return 'text-red-600 bg-red-50 border-red-200';
+	const { userInput, analysis } = processedData;
+	const { riskSummary, actionPlan, personalizedEducation, closingStatement } = analysis;
+
+	const getRiskStyling = (level: string) => {
+		switch (level) {
+			case 'LOW_MODERATE':
+				return { textColor: 'text-green-400', ringColor: 'ring-green-500', gradient: 'from-green-500 to-emerald-500', icon: <ShieldCheck /> };
+			case 'HIGH':
+				return { textColor: 'text-amber-400', ringColor: 'ring-amber-500', gradient: 'from-amber-500 to-orange-500', icon: <AlertTriangle /> };
+			case 'VERY_HIGH':
+				return { textColor: 'text-red-400', ringColor: 'ring-red-500', gradient: 'from-red-500 to-rose-500', icon: <Heart /> };
 			default:
-				return 'text-gray-600 bg-gray-50 border-gray-200';
+				return { textColor: 'text-slate-400', ringColor: 'ring-slate-500', gradient: 'from-slate-500 to-gray-500', icon: <Info /> };
 		}
 	};
 
-	const severityTextMap = {
-		LOW: 'Rendah',
-		MEDIUM: 'Sedang',
-		HIGH: 'Tinggi',
-	};
+	const riskStyling = getRiskStyling(riskSummary.riskCategory.code);
 
-	const getSeverityBadge = (severity: string) => {
-		const colors = {
-			HIGH: 'bg-red-100 text-red-700 border-red-200',
-			MEDIUM: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-			LOW: 'bg-green-100 text-green-700 border-green-200',
-		};
-		return colors[severity as keyof typeof colors] || colors.LOW;
-	};
-
-	const metricStatusMap = {
-		POOR: 'Buruk',
-		FAIR: 'Cukup',
-		GOOD: 'Baik',
-	};
-
-	const getMetricStatusColor = (status: string) => {
-		switch (status) {
-			case 'GOOD':
-				return 'text-green-600 bg-green-50';
-			case 'FAIR':
-				return 'text-yellow-600 bg-yellow-50';
-			case 'POOR':
-				return 'text-red-600 bg-red-50';
-			default:
-				return 'text-gray-600 bg-gray-50';
-		}
-	};
-
-	const getRecommendationBadge = (level: string) => {
-		const colors = {
-			GENERAL_ADVICE: 'bg-green-100 text-green-700 border-green-200',
-			CONSIDER_INTERVENTION: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-			URGENT_INTERVENTION: 'bg-red-100 text-red-700 border-red-200',
-			ROUTINE: 'bg-green-100 text-green-700 border-green-200',
-			RECOMMENDED: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-			URGENT: 'bg-red-100 text-red-700 border-red-200',
-		};
-		return colors[level as keyof typeof colors] || colors.CONSIDER_INTERVENTION;
-	};
-
-	const recommendationTextMap = {
-		GENERAL_ADVICE: 'Saran Umum',
-		CONSIDER_INTERVENTION: 'Pertimbangkan Intervensi',
-		URGENT_INTERVENTION: 'Intervensi Segera',
-		ROUTINE: 'Saran Umum',
-		RECOMMENDED: 'Pertimbangkan Intervensi',
-		URGENT: 'Intervensi Segera',
-		
-	};
-
-	const toggleMyth = (index: number) => {
-		setExpandedMyths((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
-	};
-
-	const toggleEstimation = (index: number) => {
-		setExpandedEstimations((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
-	};
-
-	const formatGender = (gender: string) => {
-		return gender === 'male' ? 'Laki-laki' : 'Perempuan';
-	};
-
-	const formatSmokingStatus = (status: string) => {
-		switch (status) {
-			case 'never':
-				return 'Tidak Pernah';
-			case 'former':
-				return 'Mantan Perokok';
-			case 'current':
-				return 'Perokok Aktif';
-			default:
-				return status;
-		}
-	};
-
-	const formatDiabetesStatus = (status: string, age?: number) => {
-		if (status === 'no') return 'Tidak';
-		return age ? `Ya (sejak usia ${age} tahun)` : 'Ya';
-	};
-
-	const isEstimated = (fieldName: string) => {
-		return userInputData.estimatedValues.includes(fieldName);
-	};
-
-	// 1. Konversi string ke angka secara eksplisit menggunakan parseFloat()
-	const percentage = parseFloat(detailedAnalysis.riskSummary.riskPercentage.toString());
-	const reduction = parseFloat(detailedAnalysis.actionPlan.impactSimulation.predictedRiskReduction.toString());
-
-	// 2. Lakukan perhitungan. Jika salah satu konversi gagal, hasilnya akan NaN.
-	const riskValue = percentage - reduction;
-
-	console.log('Detailed Analysis:', detailedAnalysis);
+	const navItems = [
+		{ id: 'summary', label: 'Ringkasan Risiko', icon: <TrendingUp /> },
+		{ id: 'action-plan', label: 'Rencana Aksi', icon: <Target /> },
+		{ id: 'education', label: 'Edukasi Personal', icon: <BookOpen /> },
+		{ id: 'input-data', label: 'Data Input', icon: <FileText /> },
+	];
 
 	return (
 		<AnimatePresence>
 			{isOpen && (
-				<div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
-					{/* Overlay */}
-					<motion.div variants={overlayVariants} initial="hidden" animate="visible" exit="exit" className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-
-					{/* Modal */}
-					<motion.div variants={modalVariants} initial="hidden" animate="visible" exit="exit" transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative w-full max-w-4xl md:max-w-6xl my-8">
-						<Card className="rounded-2xl shadow-xl border border-gray-200 bg-white pt-0">
-							{/* Header */}
-							<CardHeader className="relative p-6 md:p-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
-								<Button variant="ghost" size="icon" onClick={onClose} className="absolute top-4 right-4 h-8 w-8 rounded-full hover:bg-white/80 transition-all duration-300 cursor-pointer">
-									<X className="h-4 w-4" />
-								</Button>
-
-								<div className="flex items-start gap-4 pr-12">
-									<div className="p-3 rounded-xl bg-blue-100 hidden md:block">
-										<Heart className="h-6 w-6 text-blue-600" />
+				<div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 font-sans">
+					<motion.div variants={overlayVariants} initial="hidden" animate="visible" exit="exit" className="fixed inset-0 bg-slate-900/70 backdrop-blur-md" onClick={onClose} />
+					<motion.div variants={modalVariants} initial="hidden" animate="visible" exit="exit" className="relative w-full h-full md:max-w-6xl bg-white md:rounded-2xl shadow-2xl flex flex-col md:flex-row md:max-h-[90vh] overflow-hidden">
+						{/* --- Left Column (Sticky Navigation on Desktop) --- */}
+						<motion.aside variants={itemVariants} className="w-full md:w-1/4 flex-shrink-0 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col p-4 md:p-6">
+							<div className="flex items-center justify-between md:justify-start gap-3 mb-4 md:mb-8">
+								<div className="flex items-center gap-3">
+									<div className={`bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 w-10 h-10 rounded-full flex items-center justify-center text-white ${riskStyling.gradient}`}>
+										{React.cloneElement(riskStyling.icon, { className: 'w-6 h-6' })}
 									</div>
-									<div className="flex-1">
-										<h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Laporan Analisis Kesehatan</h2>
-										<div className="flex items-center gap-4 text-gray-600 mb-3">
-											<div className="flex items-center gap-2">
-												<Calendar className="h-4 w-4" />
-												<span className="text-sm md:text-base">{record.date}</span>
+									<div>
+										<h2 className="text-lg font-bold text-slate-800">Laporan Analisis</h2>
+										<p className="text-sm text-slate-500">{record.date}</p>
+									</div>
+								</div>
+								<Button variant="ghost" size="icon" onClick={onClose} className="md:hidden h-9 w-9 rounded-full bg-slate-200">
+									<X className="h-5 w-5" />
+								</Button>
+							</div>
+							<div className="hidden md:block text-center mb-8">
+								<p className="text-sm text-slate-500">Risiko Kardiovaskular</p>
+								<p className="text-xs text-slate-500 mb-1">10 Tahun ke Depan</p>
+								<motion.div
+									key={riskSummary.riskPercentage}
+									initial={{ scale: 0.8, opacity: 0 }}
+									animate={{ scale: 1, opacity: 1 }}
+									transition={{ duration: 0.5, ease: 'easeOut' }}
+									className={`text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r ${riskStyling.gradient}`}
+								>
+									{riskSummary.riskPercentage.toFixed(1)}%
+								</motion.div>
+								<Badge variant="outline" className={`mt-2 ${riskStyling.textColor.replace('text-', 'border-').replace('400', '500/30')} ${riskStyling.textColor.replace('text-', 'bg-').replace('400', '500/10')}`}>
+									{riskSummary.riskCategory.title}
+								</Badge>
+							</div>
+							<nav className="hidden md:relative md:block space-y-2">
+								{navItems.map((item) => (
+									<a
+										key={item.id}
+										href={`#${item.id}`}
+										onClick={(e) => {
+											e.preventDefault();
+											sectionRefs.current[item.id]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+										}}
+										className={`relative flex items-center gap-3 px-3 py-2 rounded-md text-sm font-semibold transition-colors z-10 ${activeSection === item.id ? 'text-red-700' : 'text-slate-600 hover:bg-slate-100'}`}
+									>
+										{activeSection === item.id && (
+											<motion.div
+												layoutId="active-nav-indicator"
+												className="absolute inset-0 bg-gradient-to-br from-red-400/20 via-pink-500/20 to-red-600/20 hover:from-red-500/20 hover:via-pink-600/20 hover:to-red-700/20 rounded-md"
+												transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+											/>
+										)}
+										<span className="relative z-10">{React.cloneElement(item.icon, { className: 'w-5 h-5' })}</span>
+										<span className="relative z-10">{item.label}</span>
+									</a>
+								))}
+							</nav>
+							<div className="hidden md:block mt-auto space-y-2">
+								<Button variant="outline" className="w-full" onClick={handleExportPDF}>
+									<Download className="w-4 h-4 mr-2" /> Ekspor PDF
+								</Button>
+								<Button variant="ghost" onClick={onClose} className="w-full text-slate-500">
+									<X className="w-4 h-4 mr-2" /> Tutup Laporan
+								</Button>
+							</div>
+						</motion.aside>
+						{/* --- Right Column (Scrollable Content) --- */}
+						<main ref={contentRef} className="w-full md:w-3/4 flex-grow overflow-y-auto p-6 md:p-10">
+							<motion.div variants={contentContainerVariants} initial="hidden" animate="visible" className="space-y-12">
+								<motion.section id="summary" ref={(el) => (sectionRefs.current['summary'] = el)} variants={itemVariants} className="pt-2">
+									<AdaptiveMessage summary={riskSummary.executiveSummary} riskCode={riskSummary.riskCategory.code} />
+									<p className="text-base text-slate-500 leading-relaxed mb-8">{riskSummary.contextualRiskExplanation}</p>
+									<div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+										<div className="lg:col-span-12">
+											<h3 className="text-lg font-bold text-slate-800 mb-3">Faktor Kontributor Utama</h3>
+											<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+												<ContributorBarChart data={riskSummary.primaryContributors} />
+												<AchievementCard factors={riskSummary.positiveFactors} className='h-fit'/>
 											</div>
 										</div>
 									</div>
-								</div>
-							</CardHeader>
-
-							{/* Tabs */}
-							<div className="p-4 md:p-6 lg:p-8">
-								<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-									<TabsList className="grid w-full grid-cols-2 mb-6 md:mb-8 bg-gray-100 rounded-xl p-1 pb-[40px]">
-										<TabsTrigger value="analysis" className="flex items-center gap-2 rounded-lg text-sm md:text-base font-medium transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer">
-											<Brain className="h-4 w-4" />
-											Analisis AI
-										</TabsTrigger>
-										<TabsTrigger value="input" className="flex items-center gap-2 rounded-lg text-sm md:text-base font-medium transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer">
-											<FileText className="h-4 w-4" />
-											Input Pengguna
-										</TabsTrigger>
-									</TabsList>
-
-									{/* AI Analysis Result Tab */}
-									<TabsContent value="analysis" className="mt-0">
-										<motion.div variants={tabContentVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.3 }} className="max-h-[60vh] overflow-y-auto space-y-6 md:space-y-8">
-											{/* Risk Summary */}
-											<motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-6">
-												<div className="flex items-center gap-3">
-													<div className="p-2 rounded-lg bg-red-100">
-														<TrendingUp className="h-5 w-5 text-red-600" />
-													</div>
-													<h3 className="text-xl md:text-2xl font-bold text-gray-900">Ringkasan Risiko</h3>
-												</div>
-
-												<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-													<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-white">
-														<CardContent className="p-4 md:p-6 space-y-4">
-															<div className="text-center space-y-3">
-																<Badge className={`${getRiskColor(detailedAnalysis.riskSummary.riskCategory.level)} text-sm font-medium uppercase tracking-wide`}>{detailedAnalysis.riskSummary.riskCategory.label}</Badge>
-																<div className="text-4xl md:text-5xl font-bold text-gray-900">{detailedAnalysis.riskSummary.riskPercentage}%</div>
-																<Progress value={detailedAnalysis.riskSummary.riskPercentage} className="h-3 bg-gray-200" />
-															</div>
-															<p className="text-sm md:text-base text-gray-600 leading-relaxed text-center">{detailedAnalysis.riskSummary.executiveSummary}</p>
-														</CardContent>
-													</Card>
-
-													<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-white">
-														<CardContent className="p-4 md:p-6 space-y-4">
-															<h4 className="font-bold text-gray-900 text-base md:text-lg">Faktor Kontributor Utama</h4>
-															<div className="space-y-3">
-																{detailedAnalysis.riskSummary.primaryContributors?.map((contributor, index) => (
-																	<div key={index} className="p-3 rounded-lg bg-gray-50 border border-gray-200">
-																		<div className="flex items-start justify-between gap-3 mb-2">
-																			<h5 className="font-medium text-gray-900 text-sm md:text-base">{contributor.title}</h5>
-																			<Badge className={`${getSeverityBadge(contributor.severity)} text-xs font-medium`}>{severityTextMap[contributor.severity] || contributor.severity}</Badge>
-																		</div>
-																		<p className="text-xs md:text-sm text-gray-600 leading-relaxed">{contributor.explanation}</p>
-																	</div>
-																))}
-															</div>
-														</CardContent>
-													</Card>
-												</div>
-
-												<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-													<CardContent className="p-4 md:p-6 space-y-4">
-														<h4 className="font-bold text-gray-900 text-base md:text-lg flex items-center gap-2">
-															<Info className="h-5 w-5 text-blue-600" />
-															Mengapa Tingkat Risiko Ini?
-														</h4>
-														<p className="text-sm md:text-base text-gray-700 leading-relaxed">{detailedAnalysis.riskSummary.contextualRiskExplanation}</p>
-													</CardContent>
-												</Card>
-
-												<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
-													<CardContent className="p-4 md:p-6 space-y-4">
-														<h4 className="font-bold text-gray-900 text-base md:text-lg flex items-center gap-2">
-															<CheckCircle className="h-5 w-5 text-green-600" />
-															Faktor Positif
-														</h4>
-														<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-															{(detailedAnalysis.riskSummary.positiveFactors ?? [])?.map((factor, index) => (
-																<div key={index} className="flex items-start gap-2">
-																	<CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-																	<p className="text-sm md:text-base text-gray-700">{factor}</p>
-																</div>
-															))}
-														</div>
-													</CardContent>
-												</Card>
-											</motion.section>
-
-											<Separator className="bg-gray-200" />
-
-											{/* Action Plan */}
-											<motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-6">
-												<div className="flex items-center gap-3">
-													<div className="p-2 rounded-lg bg-blue-100">
-														<Target className="h-5 w-5 text-blue-600" />
-													</div>
-													<h3 className="text-xl md:text-2xl font-bold text-gray-900">Rencana Aksi</h3>
-												</div>
-
-												{/* Medical Consultation */}
-												<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-white">
-													<CardContent className="p-4 md:p-6 space-y-4">
-														<div className="flex items-center gap-3">
-															<Stethoscope className="h-5 w-5 text-blue-600" />
-															<div className="w-full flex justify-between">
-																<h4 className="font-bold text-gray-900 text-base md:text-lg">Konsultasi Medis</h4>
-																<Badge className={`${getRecommendationBadge(detailedAnalysis.actionPlan.medicalConsultation.recommendationLevel)} text-xs font-medium uppercase tracking-wide`}>
-																	{recommendationTextMap[detailedAnalysis.actionPlan.medicalConsultation.recommendationLevel as keyof typeof recommendationTextMap]}
-																</Badge>
-															</div>
-														</div>
-														<p className="text-sm md:text-base text-gray-600 leading-relaxed">{detailedAnalysis.actionPlan.medicalConsultation.explanation}</p>
-
-														<div className="space-y-3">
-															<h5 className="font-medium text-gray-900 text-sm md:text-base">Tes yang Disarankan:</h5>
-															<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-																{detailedAnalysis.actionPlan.medicalConsultation.suggestedTests?.map((test, index) => (
-																	<div key={index} className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-																		<div className="flex items-start gap-2 mb-2">
-																			<TestTube className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-																			<h6 className="font-medium text-blue-900 text-sm">{test.title}</h6>
-																		</div>
-																		<p className="text-xs text-blue-700 leading-relaxed">{test.description}</p>
-																	</div>
-																))}
-															</div>
-														</div>
-													</CardContent>
-												</Card>
-
-												{/* Lifestyle Actions */}
-												<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-white">
-													<CardContent className="p-4 md:p-6 space-y-4">
-														<div className="flex items-center gap-3">
-															<Activity className="h-5 w-5 text-green-600" />
-															<h4 className="font-bold text-gray-900 text-base md:text-lg">Aksi Gaya Hidup</h4>
-														</div>
-
-														<div className="space-y-4">
-															{detailedAnalysis.actionPlan.lifestyleActions
-																.sort((a, b) => a.priority - b.priority)
-																?.map((action, index) => (
-																	<div key={index} className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
-																		<div className="flex items-start justify-between gap-3 mb-3">
-																			<div className="flex items-center gap-2">
-																				<div className="w-6 h-6 rounded-full bg-green-600 text-white text-xs font-bold flex items-center justify-center">{action.priority}</div>
-																				<h5 className="font-bold text-gray-900 text-sm md:text-base">{action.title}</h5>
-																			</div>
-																			<Badge className="bg-green-100 text-green-700 border-green-200 text-xs font-medium">Prioritas {action.priority}</Badge>
-																		</div>
-																		<p className="text-sm md:text-base text-gray-700 leading-relaxed mb-3">{action.description}</p>
-																		<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-																			<div className="p-2 rounded bg-white/60 border border-green-200">
-																				<p className="text-xs text-green-700 font-medium mb-1">Target:</p>
-																				<p className="text-sm text-gray-900">{action.targetGoal}</p>
-																			</div>
-																			<div className="p-2 rounded bg-white/60 border border-green-200">
-																				<p className="text-xs text-green-700 font-medium mb-1">Estimasi Dampak:</p>
-																				<p className="text-sm text-gray-900">{action.estimatedImpact}</p>
-																			</div>
-																		</div>
-																	</div>
-																))}
-														</div>
-													</CardContent>
-												</Card>
-
-												{/* Impact Simulation */}
-												<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
-													<CardContent className="p-4 md:p-6 space-y-4">
-														<div className="flex items-center gap-3">
-															<Zap className="h-5 w-5 text-purple-600" />
-															<h4 className="font-bold text-gray-900 text-base md:text-lg">Simulasi Dampak</h4>
-														</div>
-														<p className="text-sm md:text-base text-gray-700 leading-relaxed">{detailedAnalysis.actionPlan.impactSimulation.message}</p>
-														<div className="flex items-center gap-4 p-4 rounded-lg bg-white/60 border border-purple-200">
-															<div className="text-center">
-																<p className="text-2xl font-bold text-red-600">{detailedAnalysis.riskSummary.riskPercentage}%</p>
-																<p className="text-xs text-gray-600">Sekarang</p>
-															</div>
-															<ArrowRight className="h-5 w-5 text-purple-600" />
-															<div className="text-center">
-																<p className="text-2xl font-bold text-green-600">{isNaN(riskValue) ? '0.00' : riskValue.toFixed(2)}%</p>
-																<p className="text-xs text-gray-600">Setelah 6 bulan</p>
-															</div>
-														</div>
-													</CardContent>
-												</Card>
-											</motion.section>
-
-											<Separator className="bg-gray-200" />
-
-											{/* Personalized Education */}
-											<motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-6">
-												<div className="flex items-center gap-3">
-													<div className="p-2 rounded-lg bg-indigo-100">
-														<BookOpen className="h-5 w-5 text-indigo-600" />
-													</div>
-													<h3 className="text-xl md:text-2xl font-bold text-gray-900">Edukasi Personal</h3>
-												</div>
-
-												{/* Key Health Metrics */}
-												<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-white">
-													<CardContent className="p-4 md:p-6 space-y-4">
-														<h4 className="font-bold text-gray-900 text-base md:text-lg">Metrik Kesehatan Utama</h4>
-														<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-															{detailedAnalysis.personalizedEducation.keyHealthMetrics?.map((metric, index) => (
-																<div key={index} className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-																	<div className="flex items-center justify-between mb-2">
-																		<h5 className="font-medium text-gray-900 text-sm md:text-base">{metric.name}</h5>
-																		<Badge className={`${getMetricStatusColor(metric.status)} text-xs font-medium`}>{metricStatusMap[metric.status] || metric.status}</Badge>
-																	</div>
-																	<div className="space-y-1">
-																		<p className="text-sm text-gray-600">
-																			<span className="font-medium">Nilai Anda:</span> {metric.userValue}
-																		</p>
-																		<p className="text-sm text-gray-600">
-																			<span className="font-medium">Rentang Ideal:</span> {metric.idealRange}
-																		</p>
-																	</div>
-																</div>
-															))}
-														</div>
-													</CardContent>
-												</Card>
-
-												{/* Myths vs Facts */}
-												<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-white">
-													<CardContent className="p-4 md:p-6 space-y-4">
-														<h4 className="font-bold text-gray-900 text-base md:text-lg">Mitos vs Fakta</h4>
-														<div className="space-y-3">
-															{detailedAnalysis.personalizedEducation.mythsVsFacts?.map((item, index) => (
-																<Collapsible key={index}>
-																	<CollapsibleTrigger onClick={() => toggleMyth(index)} className="w-full p-3 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 transition-all duration-300 text-left cursor-pointer">
-																		<div className="flex items-center justify-between">
-																			<div className="flex items-start gap-2">
-																				<AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
-																				<div>
-																					<p className="text-sm font-medium text-red-800">MITOS</p>
-																					<p className="text-sm text-red-700">{item.myth}</p>
-																				</div>
-																			</div>
-																			{expandedMyths.includes(index) ? <ChevronUp className="h-4 w-4 text-red-600" /> : <ChevronDown className="h-4 w-4 text-red-600" />}
-																		</div>
-																	</CollapsibleTrigger>
-																	<CollapsibleContent>
-																		<motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-2 p-3 rounded-lg bg-green-50 border border-green-200">
-																			<div className="flex items-start gap-2">
-																				<CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-																				<div>
-																					<p className="text-sm font-medium text-green-800 mb-1">FAKTA</p>
-																					<p className="text-sm text-green-700 leading-relaxed">{item.fact}</p>
-																				</div>
-																			</div>
-																		</motion.div>
-																	</CollapsibleContent>
-																</Collapsible>
-															))}
-														</div>
-													</CardContent>
-												</Card>
-											</motion.section>
-
-											<Separator className="bg-gray-200" />
-
-											{/* Closing Statement */}
-											<motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="space-y-6">
-												<div className="flex items-center gap-3">
-													<div className="p-2 rounded-lg bg-green-100">
-														<MessageCircle className="h-5 w-5 text-green-600" />
-													</div>
-													<h3 className="text-xl md:text-2xl font-bold text-gray-900">Pesan Penutup</h3>
-												</div>
-
-												<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-													<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-gradient-to-br from-blue-50 to-indigo-50">
-														<CardContent className="p-4 md:p-6 space-y-3">
-															<div className="flex items-center gap-2">
-																<MessageCircle className="h-5 w-5 text-blue-600" />
-																<h4 className="font-bold text-blue-900 text-sm md:text-base">Motivasi</h4>
-															</div>
-															<p className="text-sm md:text-base text-blue-800 leading-relaxed">{detailedAnalysis.closingStatement.motivationalMessage}</p>
-														</CardContent>
-													</Card>
-
-													<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-gradient-to-br from-green-50 to-emerald-50">
-														<CardContent className="p-4 md:p-6 space-y-3">
-															<div className="flex items-center gap-2">
-																<Award className="h-5 w-5 text-green-600" />
-																<h4 className="font-bold text-green-900 text-sm md:text-base">Langkah Pertama</h4>
-															</div>
-															<p className="text-sm md:text-base text-green-800 leading-relaxed">{detailedAnalysis.closingStatement.firstStepToTake}</p>
-														</CardContent>
-													</Card>
-
-													<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-gradient-to-br from-purple-50 to-pink-50">
-														<CardContent className="p-4 md:p-6 space-y-3">
-															<div className="flex items-center gap-2">
-																<MapPin className="h-5 w-5 text-purple-600" />
-																<h4 className="font-bold text-purple-900 text-sm md:text-base">Tips Lokal</h4>
-															</div>
-															<p className="text-sm md:text-base text-purple-800 leading-relaxed">{detailedAnalysis.closingStatement.localContextTip}</p>
-														</CardContent>
-													</Card>
-												</div>
-											</motion.section>
-										</motion.div>
-									</TabsContent>
-
-									{/* User Input History Tab */}
-									<TabsContent value="input" className="mt-0">
-										<motion.div variants={tabContentVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.3 }} className="max-h-[60vh] overflow-y-auto space-y-6 md:space-y-8">
-											{/* Core Data Section */}
-											<motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-6">
-												<div className="flex items-center gap-3">
-													<div className="p-2 rounded-lg bg-blue-100">
-														<User className="h-5 w-5 text-blue-600" />
-													</div>
-													<h3 className="text-xl md:text-2xl font-bold text-gray-900">Data Dasar</h3>
-												</div>
-
-												<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-white">
-													<CardContent className="p-4 md:p-6">
-														<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-															<div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-																<div className="flex items-center gap-2 mb-2">
-																	<User className="h-4 w-4 text-gray-600" />
-																	<h4 className="font-medium text-gray-900 text-sm md:text-base">Usia</h4>
-																</div>
-																<p className="text-lg font-bold text-gray-900">{userInputData.coreData.age} tahun</p>
-															</div>
-
-															<div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-																<div className="flex items-center gap-2 mb-2">
-																	<User className="h-4 w-4 text-gray-600" />
-																	<h4 className="font-medium text-gray-900 text-sm md:text-base">Jenis Kelamin</h4>
-																</div>
-																<p className="text-lg font-bold text-gray-900">{formatGender(userInputData.coreData.gender)}</p>
-															</div>
-
-															<div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-																<div className="flex items-center gap-2 mb-2">
-																	<Cigarette className="h-4 w-4 text-gray-600" />
-																	<h4 className="font-medium text-gray-900 text-sm md:text-base">Status Merokok</h4>
-																</div>
-																<p className="text-lg font-bold text-gray-900">{formatSmokingStatus(userInputData.coreData.smokingStatus)}</p>
-															</div>
-
-															<div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-																<div className="flex items-center gap-2 mb-2">
-																	<LocationIcon className="h-4 w-4 text-gray-600" />
-																	<h4 className="font-medium text-gray-900 text-sm md:text-base">Wilayah</h4>
-																</div>
-																<p className="text-lg font-bold text-gray-900">{userInputData.coreData.region}</p>
-															</div>
-
-															<div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-																<div className="flex items-center gap-2 mb-2">
-																	<Droplets className="h-4 w-4 text-gray-600" />
-																	<h4 className="font-medium text-gray-900 text-sm md:text-base">Status Diabetes</h4>
-																</div>
-																<p className="text-lg font-bold text-gray-900">{formatDiabetesStatus(userInputData.coreData.diabetesStatus, userInputData.coreData.diabetesAge)}</p>
-															</div>
-														</div>
-													</CardContent>
-												</Card>
-											</motion.section>
-
-											<Separator className="bg-gray-200" />
-
-											{/* Health Metrics Section */}
-											<motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-6">
-												<div className="flex items-center gap-3">
-													<div className="p-2 rounded-lg bg-green-100">
-														<TestTube2 className="h-5 w-5 text-green-600" />
-													</div>
-													<h3 className="text-xl md:text-2xl font-bold text-gray-900">Metrik Kesehatan</h3>
-												</div>
-
-												<Card className="rounded-2xl shadow-sm hover:shadow-md border border-gray-200 bg-white">
-													<CardContent className="p-4 md:p-6">
-														<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-															<div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-																<div className="flex items-center gap-2 mb-2">
-																	<Activity className="h-4 w-4 text-gray-600" />
-																	<h4 className="font-medium text-gray-900 text-sm md:text-base">Tekanan Darah Sistolik (SBP)</h4>
-																</div>
-																<p className="text-lg font-bold text-gray-900">{userInputData.healthMetrics.sbp} mmHg</p>
-															</div>
-
-															<div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-																<div className="flex items-center gap-2 mb-2">
-																	<TestTube2 className="h-4 w-4 text-gray-600" />
-																	<h4 className="font-medium text-gray-900 text-sm md:text-base flex items-center gap-1">
-																		Kolesterol Total
-																		{isEstimated('totalCholesterol') && <Badge className="bg-orange-100 text-orange-700 border-orange-200 text-xs font-medium">Estimasi</Badge>}
-																	</h4>
-																</div>
-																<p className="text-lg font-bold text-gray-900">{userInputData.healthMetrics.totalCholesterol} mg/dL</p>
-															</div>
-
-															<div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-																<div className="flex items-center gap-2 mb-2">
-																	<Heart className="h-4 w-4 text-gray-600" />
-																	<h4 className="font-medium text-gray-900 text-sm md:text-base flex items-center gap-1">
-																		HDL Cholesterol
-																		{isEstimated('hdl') && <Badge className="bg-orange-100 text-orange-700 border-orange-200 text-xs font-medium">Estimasi</Badge>}
-																	</h4>
-																</div>
-																<p className="text-lg font-bold text-gray-900">{userInputData.healthMetrics.hdl} mg/dL</p>
-															</div>
-
-															{userInputData.healthMetrics.hba1c && (
-																<div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-																	<div className="flex items-center gap-2 mb-2">
-																		<Droplets className="h-4 w-4 text-gray-600" />
-																		<h4 className="font-medium text-gray-900 text-sm md:text-base">HbA1c</h4>
-																	</div>
-																	<p className="text-lg font-bold text-gray-900">{userInputData.healthMetrics.hba1c}%</p>
-																</div>
-															)}
-
-															{userInputData.healthMetrics.scr && (
-																<div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-																	<div className="flex items-center gap-2 mb-2">
-																		<TestTube className="h-4 w-4 text-gray-600" />
-																		<h4 className="font-medium text-gray-900 text-sm md:text-base">Serum Kreatinin</h4>
-																	</div>
-																	<p className="text-lg font-bold text-gray-900">{userInputData.healthMetrics.scr} mg/dL</p>
-																</div>
-															)}
-														</div>
-													</CardContent>
-												</Card>
-											</motion.section>
-
-											<Separator className="bg-gray-200" />
-
-											{/* Estimated Parameters Breakdown */}
-											{userInputData.estimatedParameters.length > 0 && (
-												<motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-6">
-													<div className="flex items-center gap-3">
-														<div className="p-2 rounded-lg bg-orange-100">
-															<Calculator className="h-5 w-5 text-orange-600" />
-														</div>
-														<h3 className="text-xl md:text-2xl font-bold text-gray-900">Detail Estimasi Parameter</h3>
-													</div>
-
-													<div className="space-y-4">
-														{userInputData.estimatedParameters?.map((param, index) => (
-															<Card key={index} className="rounded-2xl shadow-sm hover:shadow-md border border-orange-200 bg-white">
-																<Collapsible>
-																	<CollapsibleTrigger onClick={() => toggleEstimation(index)} className="w-full p-4 md:p-6 text-left hover:bg-orange-50/50 transition-all duration-300 rounded-2xl cursor-pointer">
-																		<div className="flex items-center justify-between">
-																			<div className="flex items-center gap-3">
-																				<div className="p-2 rounded-lg bg-orange-100">
-																					<Calculator className="h-5 w-5 text-orange-600" />
-																				</div>
-																				<div>
-																					<h4 className="font-bold text-gray-900 text-base md:text-lg flex items-center gap-2">
-																						{param.name}
-																						<Badge className="bg-orange-100 text-orange-700 border-orange-200 text-xs font-medium">Estimasi</Badge>
-																					</h4>
-																					<div className="flex items-center gap-4 mt-1">
-																						<p className="text-2xl font-bold text-orange-600">
-																							{param.value} {param.unit}
-																						</p>
-																						<p className="text-sm text-gray-600">{param.estimationMethod}</p>
-																					</div>
-																				</div>
-																			</div>
-																			{expandedEstimations.includes(index) ? <ChevronUp className="h-5 w-5 text-orange-600" /> : <ChevronDown className="h-5 w-5 text-orange-600" />}
-																		</div>
-																	</CollapsibleTrigger>
-																	<CollapsibleContent>
-																		<motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="px-4 md:px-6 pb-4 md:pb-6">
-																			<Separator className="mb-4 bg-orange-200" />
-																			<div className="space-y-4">
-																				<div className="flex items-center gap-2 mb-3">
-																					<HelpCircle className="h-4 w-4 text-orange-600" />
-																					<h5 className="font-bold text-gray-900 text-sm md:text-base">Proxy Question Responses</h5>
-																				</div>
-																				<div className="space-y-3">
-																					{param.proxyResponses?.map((response, responseIndex) => (
-																						<div key={responseIndex} className="p-3 rounded-lg bg-orange-50 border border-orange-200">
-																							<div className="space-y-2">
-																								<div>
-																									<p className="text-sm font-medium text-orange-800 mb-1">Pertanyaan:</p>
-																									<p className="text-sm text-gray-700 leading-relaxed">{response.question}</p>
-																								</div>
-																								<div>
-																									<p className="text-sm font-medium text-orange-800 mb-1">Jawaban Anda:</p>
-																									<p className="text-sm font-bold text-gray-900">{response.answer}</p>
-																								</div>
-																							</div>
-																						</div>
-																					))}
-																				</div>
-																			</div>
-																		</motion.div>
-																	</CollapsibleContent>
-																</Collapsible>
-															</Card>
-														))}
-													</div>
-												</motion.section>
-											)}
-
-											{/* General Estimation Note */}
-											{userInputData.estimatedValues.length > 0 && (
-												<motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-													<Card className="rounded-2xl shadow-sm hover:shadow-md border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-														<CardContent className="p-4 md:p-6">
-															<div className="flex items-start gap-3">
-																<Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-																<div>
-																	<h4 className="font-bold text-blue-900 text-sm md:text-base mb-2">Tentang Estimasi Parameter</h4>
-																	<p className="text-sm md:text-base text-blue-800 leading-relaxed">
-																		Parameter yang ditandai dengan badge "Estimasi" dihitung menggunakan algoritma AI berdasarkan jawaban proxy questions yang Anda berikan. Sistem menganalisis pola respons Anda untuk memberikan perkiraan
-																		nilai yang akurat secara klinis. Estimasi ini telah divalidasi dengan data medis dan memberikan tingkat akurasi yang tinggi untuk analisis risiko kardiovaskular.
-																	</p>
-																</div>
-															</div>
-														</CardContent>
-													</Card>
-												</motion.section>
-											)}
-										</motion.div>
-									</TabsContent>
-								</Tabs>
-							</div>
-						</Card>
+								</motion.section>
+								<ThematicSeparator />
+								<motion.section id="action-plan" ref={(el) => (sectionRefs.current['action-plan'] = el)} variants={itemVariants}>
+									<h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-6">Rencana Aksi Personal Anda</h2>
+									<div className="space-y-6">
+										<InfoCard icon={<Stethoscope />} title="Saran Konsultasi Medis" color="sky">
+											<p className="text-base text-sky-800 mb-4">{actionPlan.medicalConsultation.recommendationLevel.description}</p>
+											<h4 className="font-semibold text-base text-sky-900 mb-3">Tes Laboratorium yang Disarankan:</h4>
+											<div className="space-y-2">
+												{actionPlan.medicalConsultation.suggestedTests.map((test: any, index: number) => (
+													<SuggestedTestItem key={index} test={test} />
+												))}
+											</div>
+										</InfoCard>
+										<div>
+											<h3 className="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2">
+												<Activity className="w-6 h-6 text-green-600" />
+												Prioritas Perubahan Gaya Hidup
+											</h3>
+											<div className="space-y-4">
+												{actionPlan.lifestyleActions.map((action: any) => (
+													<ActionItem key={action.rank} {...action} isHighlighted={action.rank === 1} />
+												))}
+											</div>
+										</div>
+										<ImpactSimulationCard {...actionPlan.impactSimulation} currentRisk={riskSummary.riskPercentage} />
+									</div>
+								</motion.section>
+								<ThematicSeparator />
+								<motion.section id="education" ref={(el) => (sectionRefs.current['education'] = el)} variants={itemVariants}>
+									<h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-6">Pahami Kesehatan Anda Lebih Baik</h2>
+									<div className="space-y-8">
+										<div>
+											<h3 className="text-xl font-bold text-slate-800 mb-4">Metrik Kesehatan Utama Anda</h3>
+											<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+												{personalizedEducation.keyHealthMetrics.map((metric: any, index: number) => (
+													<MetricDetailCard key={index} {...metric} />
+												))}
+											</div>
+										</div>
+										<div>
+											<h3 className="text-xl font-bold text-slate-800 mb-4">Mitos vs. Fakta</h3>
+											<div className="space-y-4">
+												{personalizedEducation.mythsVsFacts.map((item: any, index: number) => (
+													<MythBuster key={index} myth={item.myth} fact={item.fact} />
+												))}
+											</div>
+										</div>
+									</div>
+								</motion.section>
+								<ThematicSeparator />
+								<motion.section id="input-data" ref={(el) => (sectionRefs.current['input-data'] = el)} variants={itemVariants}>
+									<h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-6">Data yang Anda Berikan</h2>
+									<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+										<DataPoint icon={<User />} label="Usia" value={`${userInput.coreData.age} tahun`} />
+										<DataPoint icon={<User />} label="Jenis Kelamin" value={userInput.coreData.gender === 'male' ? 'Pria' : 'Wanita'} />
+										<DataPoint icon={<Cigarette />} label="Status Merokok" value={userInput.coreData.smokingStatus === 'never' ? 'Tidak Pernah' : 'Perokok'} />
+										<DataPoint icon={<Droplets />} label="Riwayat Diabetes" value={userInput.coreData.diabetesStatus === 'no' ? 'Tidak' : `Ya (usia ${userInput.coreData.diabetesAge})`} />
+										<DataPoint icon={<Activity />} label="Tekanan Darah (SBP)" value={`${userInput.healthMetrics.sbp} mmHg`} estimationDetails={userInput.estimatedParameters.find((p) => p.name.includes('SBP'))} />
+										<DataPoint icon={<TestTube2 />} label="Kolesterol Total" value={`${userInput.healthMetrics.totalCholesterol} mg/dL`} estimationDetails={userInput.estimatedParameters.find((p) => p.name.includes('Kolesterol Total'))} />
+										<DataPoint icon={<Heart />} label="Kolesterol HDL" value={`${userInput.healthMetrics.hdl} mg/dL`} estimationDetails={userInput.estimatedParameters.find((p) => p.name.includes('HDL'))} />
+									</div>
+								</motion.section>
+								<ClosingStatementCard {...closingStatement} />
+							</motion.div>
+						</main>
 					</motion.div>
 				</div>
 			)}
 		</AnimatePresence>
 	);
 }
+
+// --- SUB-COMPONENTS ---
+const AdaptiveMessage = ({ summary, riskCode }: { summary: string; riskCode: string }) => {
+	const greeting = useMemo(() => {
+		switch (riskCode) {
+			case 'VERY_HIGH':
+			case 'HIGH':
+				return 'Mari kita lihat hasil ini bersama. Ada beberapa area penting yang perlu kita perhatikan untuk menjaga kesehatan jantung Anda.';
+			case 'LOW_MODERATE':
+				return 'Kabar baik! Hasil analisis Anda menunjukkan fondasi yang kuat untuk kesehatan jantung. Mari kita lihat detailnya.';
+			default:
+				return 'Berikut adalah hasil analisis kesehatan Anda.';
+		}
+	}, [riskCode]);
+	return (
+		<p className="  leading-relaxed mb-4">
+			<span className="text-xl text-slate-700 font-semibold">{greeting}</span>
+			<div className="text-base text-slate-500 mt-4">{summary}</div>
+		</p>
+	);
+};
+
+const ContributorBarChart = ({ data }: { data: any[] }) => (
+	<div className="space-y-4 p-4 bg-slate-100 rounded-xl">
+		{data.map((item, index) => (
+			<ContributorItem key={index} item={item} index={index} />
+		))}
+	</div>
+);
+
+const ContributorItem = ({ item, index }: { item: any; index: number }) => {
+	const [isOpen, setIsOpen] = useState(false);
+	const severityMap = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+	const maxSeverity = 3;
+	const severityStyles = {
+		HIGH: { text: 'Tinggi', bar: 'bg-red-400' },
+		MEDIUM: { text: 'Sedang', bar: 'bg-amber-400' },
+		LOW: { text: 'Rendah', bar: 'bg-green-400' },
+	};
+	const severityValue = severityMap[item.severity as keyof typeof severityMap] || 1;
+	const widthPercentage = (severityValue / maxSeverity) * 100;
+	const style = severityStyles[item.severity as keyof typeof severityStyles];
+	return (
+		<Collapsible open={isOpen} onOpenChange={setIsOpen}>
+			<CollapsibleTrigger className="w-full text-left group p-2 rounded-md hover:bg-slate-200/50 transition-colors">
+				<div className="flex justify-between items-center mb-1 text-sm">
+					<span className="font-semibold text-slate-700">{item.title}</span>
+					<div className="flex items-center gap-2">
+						<span className={`font-bold ${style.bar.replace('bg-', 'text-')}`}>{style.text}</span>
+						<ChevronDown className="w-4 h-4 text-slate-400 group-data-[state=open]:rotate-180 transition-transform" />
+					</div>
+				</div>
+				<div className="w-full bg-slate-200 rounded-full h-2.5">
+					<motion.div className={`h-2.5 rounded-full ${style.bar}`} initial={{ width: 0 }} animate={{ width: `${widthPercentage}%` }} transition={{ duration: 0.8, delay: 0.2 * index, ease: 'easeOut' }} />
+				</div>
+			</CollapsibleTrigger>
+			<AnimatePresence initial={false}>
+				{isOpen && (
+					<CollapsibleContent asChild forceMount>
+						<motion.div
+							initial="collapsed"
+							animate="open"
+							exit="collapsed"
+							variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+							transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
+							className="overflow-hidden"
+						>
+							<div className="text-sm text-slate-600 mt-2 px-2 pt-2 pb-1 border-t border-slate-200">{item.description}</div>
+						</motion.div>
+					</CollapsibleContent>
+				)}
+			</AnimatePresence>
+		</Collapsible>
+	);
+};
+
+const SuggestedTestItem = ({ test }: { test: any }) => {
+	const [isOpen, setIsOpen] = useState(false);
+	return (
+		<Collapsible open={isOpen} onOpenChange={setIsOpen}>
+			<CollapsibleTrigger className="w-full flex items-center justify-between text-left p-2 rounded-md hover:bg-sky-100/50 group">
+				<span className="font-semibold text-sm text-sky-800 flex items-center gap-2">
+					<TestTube className="w-4 h-4" />
+					{test.title}
+				</span>
+				<ChevronDown className="w-4 h-4 text-sky-600 group-data-[state=open]:rotate-180 transition-transform" />
+			</CollapsibleTrigger>
+			<AnimatePresence initial={false}>
+				{isOpen && (
+					<CollapsibleContent asChild forceMount>
+						<motion.div
+							initial="collapsed"
+							animate="open"
+							exit="collapsed"
+							variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+							transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
+							className="overflow-hidden"
+						>
+							<div className="text-sm text-sky-700 px-2 pt-2 pb-1 border-t border-sky-200/70">{test.description}</div>
+						</motion.div>
+					</CollapsibleContent>
+				)}
+			</AnimatePresence>
+		</Collapsible>
+	);
+};
+
+const InfoCard = ({ icon, title, color, children }: { icon: React.ReactNode; title: string; color: 'green' | 'sky' | 'amber'; children: React.ReactNode }) => {
+	const colors = { green: 'bg-green-100/50 border-green-200 text-green-900', sky: 'bg-sky-100/50 border-sky-200 text-sky-900', amber: 'bg-amber-100/50 border-amber-200 text-amber-900' };
+	const iconColors = { green: 'text-green-600', sky: 'text-sky-600', amber: 'text-amber-600' };
+	return (
+		<div className={`p-5 rounded-xl border ${colors[color]}`}>
+			<div className="flex items-center gap-3 mb-2">
+				<div className={iconColors[color]}>{React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}</div>
+				<h4 className="font-semibold text-base">{title}</h4>
+			</div>
+			{children}
+		</div>
+	);
+};
+
+const AchievementCard = ({ factors }: { factors: string[] }) => (
+	<InfoCard icon={<Sparkles />} title="Pencapaian Positif Anda" color="green">
+		<div className="grid grid-cols-2 gap-3 mt-3">
+			{factors.map((factor, index) => (
+				<div key={index} className="flex flex-col items-center text-center p-3 bg-white/50 rounded-lg">
+					<div className="p-2 bg-green-200 rounded-full mb-2">
+						<CheckCircle className="w-5 h-5 text-green-700" />
+					</div>
+					<p className="font-semibold text-xs text-green-800">{factor.split(',')[0]}</p>
+				</div>
+			))}
+		</div>
+	</InfoCard>
+);
+
+const ActionItem = ({ rank, title, description, target, estimatedImpact, isHighlighted }: any) => (
+	<motion.div
+		variants={itemVariants}
+		whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+		className={`p-5 rounded-xl border bg-white shadow-sm transition-all duration-300 ${isHighlighted ? 'border-green-300 ring-2 ring-green-500/50 ring-offset-2 ring-offset-white' : 'border-slate-200'}`}
+	>
+		<div className="flex items-start gap-4">
+			<div className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full bg-green-600 text-white font-bold text-lg">{rank}</div>
+			<div className="flex-grow">
+				<h4 className="font-semibold text-lg text-slate-900">{title}</h4>
+				<p className="text-base text-slate-700 mt-1 mb-3">{description}</p>
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+					<div className="p-3 rounded-md bg-green-50">
+						<p className="font-semibold text-green-800">Target Anda:</p>
+						<p className="text-green-700">{target}</p>
+					</div>
+					<div className="p-3 rounded-md bg-green-50">
+						<p className="font-semibold text-green-800">Estimasi Dampak:</p>
+						<p className="text-green-700">{estimatedImpact}</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</motion.div>
+);
+
+const MythBuster = ({ myth, fact }: { myth: string; fact: string }) => {
+	const [isOpen, setIsOpen] = useState(false);
+	return (
+		<Collapsible open={isOpen} onOpenChange={setIsOpen}>
+			<CollapsibleTrigger className="w-full p-4 rounded-xl border border-slate-200 bg-white shadow-sm text-left group hover:bg-slate-50 transition-colors">
+				<div className="flex items-center justify-between">
+					<div className="flex items-start gap-3">
+						<AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
+						<div>
+							<p className="text-sm font-semibold text-amber-600">MITOS</p>
+							<p className="font-semibold text-base text-slate-800">{myth}</p>
+						</div>
+					</div>
+					<ChevronDown className="w-5 h-5 text-slate-400 group-data-[state=open]:rotate-180 transition-transform" />
+				</div>
+			</CollapsibleTrigger>
+			<AnimatePresence initial={false}>
+				{isOpen && (
+					<CollapsibleContent asChild forceMount>
+						<motion.div
+							initial="collapsed"
+							animate="open"
+							exit="collapsed"
+							variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+							transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+							className="overflow-hidden"
+						>
+							<div className="p-4 mt-2 rounded-xl bg-green-50 border border-green-200">
+								<div className="flex items-start gap-3">
+									<ShieldCheck className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+									<div>
+										<p className="text-sm font-semibold text-green-700">FAKTA</p>
+										<p className="text-base text-green-800 leading-relaxed">{fact}</p>
+									</div>
+								</div>
+							</div>
+						</motion.div>
+					</CollapsibleContent>
+				)}
+			</AnimatePresence>
+		</Collapsible>
+	);
+};
+
+const ImpactSimulationCard = ({ message, timeEstimation, riskAfterChange, currentRisk }: any) => (
+	<div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-2xl border border-indigo-200 text-center">
+		<div className="flex justify-center items-center gap-2 mb-2">
+			<Zap className="w-5 h-5 text-indigo-500" />
+			<h3 className="text-lg font-bold text-slate-800">Simulasi Dampak Positif</h3>
+		</div>
+		<p className="text-base text-slate-700 max-w-2xl mx-auto mb-4">{message}</p>
+		<div className="flex items-center justify-center gap-4 md:gap-8">
+			<div className="text-center">
+				<p className="text-4xl md:text-5xl font-extrabold text-red-500">{currentRisk.toFixed(1)}%</p>
+				<p className="text-sm text-slate-500 font-medium mt-1">Risiko Saat Ini</p>
+			</div>
+			<ArrowRight className="h-8 w-8 text-slate-400" />
+			<div className="text-center">
+				<p className="text-4xl md:text-5xl font-extrabold text-green-500">{riskAfterChange.toFixed(1)}%</p>
+				<p className="text-sm text-slate-500 font-medium mt-1">Potensi Risiko Baru</p>
+			</div>
+		</div>
+		<p className="text-sm text-slate-500 mt-4">Estimasi waktu: {timeEstimation}</p>
+	</div>
+);
+
+const MetricDetailCard = ({ code, title, yourValue, idealRange, description }: any) => {
+	const statusStyles = {
+		POOR: { text: 'Perlu Perhatian', badge: 'bg-red-100 text-red-800', scaleColor: 'bg-red-400' },
+		FAIR: { text: 'Cukup', badge: 'bg-amber-100 text-amber-800', scaleColor: 'bg-amber-400' },
+		GOOD: { text: 'Baik', badge: 'bg-green-100 text-green-800', scaleColor: 'bg-green-400' },
+	};
+	const status = statusStyles[code as keyof typeof statusStyles] || { text: code, badge: 'bg-slate-100 text-slate-700', scaleColor: 'bg-slate-400' };
+
+	const scalePosition = code === 'GOOD' ? '16.6%' : code === 'FAIR' ? '50%' : '83.3%';
+
+	return (
+		<div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
+			<div className="flex justify-between items-start mb-2">
+				<h4 className="font-semibold text-base text-slate-800">{title}</h4>
+				<Badge className={`text-sm font-bold ${status.badge}`}>{status.text}</Badge>
+			</div>
+			<div className="flex items-baseline gap-2 mb-2">
+				<span className="text-3xl font-bold text-sky-600">{yourValue}</span>
+				<span className="text-base text-slate-500">/ ideal: {idealRange}</span>
+			</div>
+			<div className="w-full h-2 bg-gradient-to-r from-green-300 via-amber-300 to-red-300 rounded-full mb-2 relative">
+				<motion.div className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ring-2 ring-white ${status.scaleColor}`} initial={{ left: '50%' }} animate={{ left: scalePosition }} transition={{ duration: 0.8, ease: 'easeOut' }} />
+			</div>
+			<p className="text-sm text-slate-700 leading-relaxed flex-grow mt-2">{description}</p>
+		</div>
+	);
+};
+
+const DataPoint = ({ icon, label, value, estimationDetails }: { icon: React.ReactNode; label: string; value: string; estimationDetails?: any }) => {
+	const [isOpen, setIsOpen] = useState(false);
+	if (!estimationDetails) {
+		return (
+			<div className="p-3 bg-white rounded-lg border border-slate-200 h-fit">
+				<div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
+					{React.cloneElement(icon as React.ReactElement, { className: 'w-4 h-4' })}
+					<span>{label}</span>
+				</div>
+				<p className="font-bold text-base text-slate-800">{value}</p>
+			</div>
+		);
+	}
+	return (
+		<Collapsible open={isOpen} onOpenChange={setIsOpen} className="p-3 bg-white rounded-lg border border-slate-200">
+			<CollapsibleTrigger className="w-full text-left group">
+				<div className="flex items-center justify-between">
+					<div>
+						<div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
+							{React.cloneElement(icon as React.ReactElement, { className: 'w-4 h-4' })}
+							<span>{label}</span>
+						</div>
+						<p className="font-bold text-base text-slate-800">{value}</p>
+					</div>
+					<ChevronDown className="w-4 h-4 text-slate-400 group-data-[state=open]:rotate-180 transition-transform" />
+				</div>
+				<Badge className="mt-1 text-xs bg-amber-100 text-amber-800 font-semibold">Estimasi</Badge>
+			</CollapsibleTrigger>
+			<AnimatePresence initial={false}>
+				{isOpen && (
+					<CollapsibleContent asChild forceMount>
+						<motion.div
+							initial="collapsed"
+							animate="open"
+							exit="collapsed"
+							variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+							transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
+							className="overflow-hidden"
+						>
+							<div className="pt-3 mt-3 border-t border-slate-200/80">
+								<h5 className="text-sm font-semibold text-slate-600 mb-2">Jawaban yang Digunakan:</h5>
+								<div className="space-y-2">
+									{estimationDetails.proxyResponses.map((res: any, index: number) => (
+										<div key={index} className="text-sm">
+											<p className="text-slate-500">{res.question}</p>
+											<p className="font-semibold text-slate-700">{res.answer}</p>
+										</div>
+									))}
+								</div>
+							</div>
+						</motion.div>
+					</CollapsibleContent>
+				)}
+			</AnimatePresence>
+		</Collapsible>
+	);
+};
+
+const ClosingStatementCard = ({ motivationalMessage, firstStepAction, localContextTip }: any) => (
+	<div className="p-6 bg-gradient-to-br from-sky-500 to-indigo-600 rounded-2xl text-white shadow-lg">
+		<h3 className="text-2xl font-bold mb-4">Langkah Anda Selanjutnya</h3>
+		<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+			<div className="flex items-start gap-3">
+				<Award className="w-8 h-8 text-white/80 flex-shrink-0" />
+				<div>
+					<h4 className="font-semibold mb-1">Fokus Utama</h4>
+					<p className="text-white/90 text-sm">{firstStepAction}</p>
+				</div>
+			</div>
+			<div className="flex items-start gap-3">
+				<MessageCircle className="w-8 h-8 text-white/80 flex-shrink-0" />
+				<div>
+					<h4 className="font-semibold mb-1">Pesan Semangat</h4>
+					<p className="text-white/90 text-sm">{motivationalMessage}</p>
+				</div>
+			</div>
+			<div className="flex items-start gap-3">
+				<MapPin className="w-8 h-8 text-white/80 flex-shrink-0" />
+				<div>
+					<h4 className="font-semibold mb-1">Tips Kontekstual</h4>
+					<p className="text-white/90 text-sm">{localContextTip}</p>
+				</div>
+			</div>
+		</div>
+	</div>
+);
+
+const ThematicSeparator = () => (
+	<div className="flex items-center text-slate-300" aria-hidden="true">
+		<div className="flex-grow border-t border-slate-200"></div>
+		<span className="flex-shrink mx-4">
+			<Activity className="w-5 h-5" />
+		</span>
+		<div className="flex-grow border-t border-slate-200"></div>
+	</div>
+);
