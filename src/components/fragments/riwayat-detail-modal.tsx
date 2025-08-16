@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo, useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import {
 	X,
-	Calendar,
 	TrendingUp,
 	Activity,
 	Heart,
@@ -27,7 +26,7 @@ import {
 	CheckCircle,
 	MapPin,
 	ArrowRight,
-	Download,
+	// Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +41,7 @@ interface RiwayatDetailModalProps {
 }
 
 // --- ANIMATION VARIANTS ---
-const modalVariants = {
+const modalVariants: Variants = {
 	hidden: { opacity: 0, y: 50, scale: 0.95 },
 	visible: {
 		opacity: 1,
@@ -56,12 +55,12 @@ const modalVariants = {
 	},
 	exit: { opacity: 0, y: 50, scale: 0.95, transition: { duration: 0.3, ease: [0.5, 0, 0.75, 0] } },
 };
-const overlayVariants = {
+const overlayVariants: Variants = {
 	hidden: { opacity: 0 },
 	visible: { opacity: 1, transition: { duration: 0.3 } },
 	exit: { opacity: 0, transition: { duration: 0.3 } },
 };
-const contentContainerVariants = {
+const contentContainerVariants: Variants = {
 	hidden: {},
 	visible: {
 		transition: {
@@ -69,7 +68,7 @@ const contentContainerVariants = {
 		},
 	},
 };
-const itemVariants = {
+const itemVariants: Variants = {
 	hidden: { opacity: 0, y: 20 },
 	visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
 };
@@ -104,9 +103,9 @@ export function RiwayatDetailModal({ record, isOpen, onClose }: RiwayatDetailMod
 		};
 	}, [isOpen, record]);
 
-	const handleExportPDF = () => {
-		window.print();
-	};
+	// const handleExportPDF = () => {
+	// 	window.print();
+	// };
 
 	const processedData = useMemo(() => {
 		if (!record) return null;
@@ -218,7 +217,7 @@ export function RiwayatDetailModal({ record, isOpen, onClose }: RiwayatDetailMod
 							<div className="flex items-center justify-between md:justify-start gap-3 mb-4 md:mb-8">
 								<div className="flex items-center gap-3">
 									<div className={`bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 w-10 h-10 rounded-full flex items-center justify-center text-white ${riskStyling.gradient}`}>
-										{React.cloneElement(riskStyling.icon, { className: 'w-6 h-6' })}
+										{React.cloneElement(riskStyling.icon as React.ReactElement<any>, { className: 'w-6 h-6' })}
 									</div>
 									<div>
 										<h2 className="text-lg font-bold text-slate-800">Laporan Analisis</h2>
@@ -263,24 +262,31 @@ export function RiwayatDetailModal({ record, isOpen, onClose }: RiwayatDetailMod
 												transition={{ type: 'spring', stiffness: 300, damping: 30 }}
 											/>
 										)}
-										<span className="relative z-10">{React.cloneElement(item.icon, { className: 'w-5 h-5' })}</span>
+										<span className="relative z-10">{React.cloneElement(item.icon as React.ReactElement<any>, { className: 'w-5 h-5' })}</span>
 										<span className="relative z-10">{item.label}</span>
 									</a>
 								))}
 							</nav>
-							<div className="hidden md:block mt-auto space-y-2">
+							{/* <div className="hidden md:block mt-auto space-y-2">
 								<Button variant="outline" className="w-full" onClick={handleExportPDF}>
 									<Download className="w-4 h-4 mr-2" /> Ekspor PDF
 								</Button>
 								<Button variant="ghost" onClick={onClose} className="w-full text-slate-500">
 									<X className="w-4 h-4 mr-2" /> Tutup Laporan
 								</Button>
-							</div>
+							</div> */}
 						</motion.aside>
 						{/* --- Right Column (Scrollable Content) --- */}
 						<main ref={contentRef} className="w-full md:w-3/4 flex-grow overflow-y-auto p-6 md:p-10">
 							<motion.div variants={contentContainerVariants} initial="hidden" animate="visible" className="space-y-12">
-								<motion.section id="summary" ref={(el) => (sectionRefs.current['summary'] = el)} variants={itemVariants} className="pt-2">
+								<motion.section
+									id="summary"
+									ref={(el) => {
+										sectionRefs.current['summary'] = el;
+									}}
+									variants={itemVariants}
+									className="pt-2"
+								>
 									<AdaptiveMessage summary={riskSummary.executiveSummary} riskCode={riskSummary.riskCategory.code} />
 									<p className="text-base text-slate-500 leading-relaxed mb-8">{riskSummary.contextualRiskExplanation}</p>
 									<div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -288,13 +294,19 @@ export function RiwayatDetailModal({ record, isOpen, onClose }: RiwayatDetailMod
 											<h3 className="text-lg font-bold text-slate-800 mb-3">Faktor Kontributor Utama</h3>
 											<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 												<ContributorBarChart data={riskSummary.primaryContributors} />
-												<AchievementCard factors={riskSummary.positiveFactors} className='h-fit'/>
+												<AchievementCard factors={riskSummary.positiveFactors} className="h-fit" />
 											</div>
 										</div>
 									</div>
 								</motion.section>
 								<ThematicSeparator />
-								<motion.section id="action-plan" ref={(el) => (sectionRefs.current['action-plan'] = el)} variants={itemVariants}>
+								<motion.section
+									id="action-plan"
+									ref={(el) => {
+										sectionRefs.current['action-plan'] = el;
+									}}
+									variants={itemVariants}
+								>
 									<h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-6">Rencana Aksi Personal Anda</h2>
 									<div className="space-y-6">
 										<InfoCard icon={<Stethoscope />} title="Saran Konsultasi Medis" color="sky">
@@ -321,7 +333,13 @@ export function RiwayatDetailModal({ record, isOpen, onClose }: RiwayatDetailMod
 									</div>
 								</motion.section>
 								<ThematicSeparator />
-								<motion.section id="education" ref={(el) => (sectionRefs.current['education'] = el)} variants={itemVariants}>
+								<motion.section
+									id="education"
+									ref={(el) => {
+										sectionRefs.current['education'] = el;
+									}}
+									variants={itemVariants}
+								>
 									<h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-6">Pahami Kesehatan Anda Lebih Baik</h2>
 									<div className="space-y-8">
 										<div>
@@ -343,7 +361,13 @@ export function RiwayatDetailModal({ record, isOpen, onClose }: RiwayatDetailMod
 									</div>
 								</motion.section>
 								<ThematicSeparator />
-								<motion.section id="input-data" ref={(el) => (sectionRefs.current['input-data'] = el)} variants={itemVariants}>
+								<motion.section
+									id="input-data"
+									ref={(el) => {
+										sectionRefs.current['input-data'] = el;
+									}}
+									variants={itemVariants}
+								>
 									<h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-6">Data yang Anda Berikan</h2>
 									<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 										<DataPoint icon={<User />} label="Usia" value={`${userInput.coreData.age} tahun`} />
@@ -471,13 +495,13 @@ const SuggestedTestItem = ({ test }: { test: any }) => {
 	);
 };
 
-const InfoCard = ({ icon, title, color, children }: { icon: React.ReactNode; title: string; color: 'green' | 'sky' | 'amber'; children: React.ReactNode }) => {
+const InfoCard = ({ icon, title, color, children, className }: { icon: React.ReactElement; title: string; color: 'green' | 'sky' | 'amber'; children: React.ReactNode; className?: string }) => {
 	const colors = { green: 'bg-green-100/50 border-green-200 text-green-900', sky: 'bg-sky-100/50 border-sky-200 text-sky-900', amber: 'bg-amber-100/50 border-amber-200 text-amber-900' };
 	const iconColors = { green: 'text-green-600', sky: 'text-sky-600', amber: 'text-amber-600' };
 	return (
-		<div className={`p-5 rounded-xl border ${colors[color]}`}>
+		<div className={`p-5 rounded-xl border ${colors[color]} ${className}`}>
 			<div className="flex items-center gap-3 mb-2">
-				<div className={iconColors[color]}>{React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}</div>
+				<div className={iconColors[color]}>{React.cloneElement(icon as React.ReactElement<any>, { className: 'w-5 h-5' })}</div>
 				<h4 className="font-semibold text-base">{title}</h4>
 			</div>
 			{children}
@@ -485,8 +509,8 @@ const InfoCard = ({ icon, title, color, children }: { icon: React.ReactNode; tit
 	);
 };
 
-const AchievementCard = ({ factors }: { factors: string[] }) => (
-	<InfoCard icon={<Sparkles />} title="Pencapaian Positif Anda" color="green">
+const AchievementCard = ({ factors, className }: { factors: string[]; className?: string }) => (
+	<InfoCard icon={<Sparkles />} title="Pencapaian Positif Anda" color="green" className={className}>
 		<div className="grid grid-cols-2 gap-3 mt-3">
 			{factors.map((factor, index) => (
 				<div key={index} className="flex flex-col items-center text-center p-3 bg-white/50 rounded-lg">
@@ -620,13 +644,13 @@ const MetricDetailCard = ({ code, title, yourValue, idealRange, description }: a
 	);
 };
 
-const DataPoint = ({ icon, label, value, estimationDetails }: { icon: React.ReactNode; label: string; value: string; estimationDetails?: any }) => {
+const DataPoint = ({ icon, label, value, estimationDetails }: { icon: React.ReactElement; label: string; value: string; estimationDetails?: any }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	if (!estimationDetails) {
 		return (
 			<div className="p-3 bg-white rounded-lg border border-slate-200 h-fit">
 				<div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
-					{React.cloneElement(icon as React.ReactElement, { className: 'w-4 h-4' })}
+					{React.cloneElement(icon as React.ReactElement<any>, { className: 'w-4 h-4' })}
 					<span>{label}</span>
 				</div>
 				<p className="font-bold text-base text-slate-800">{value}</p>
@@ -639,7 +663,7 @@ const DataPoint = ({ icon, label, value, estimationDetails }: { icon: React.Reac
 				<div className="flex items-center justify-between">
 					<div>
 						<div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
-							{React.cloneElement(icon as React.ReactElement, { className: 'w-4 h-4' })}
+							{React.cloneElement(icon as React.ReactElement<any>, { className: 'w-4 h-4' })}
 							<span>{label}</span>
 						</div>
 						<p className="font-bold text-base text-slate-800">{value}</p>
