@@ -619,7 +619,7 @@ const TrendChart = ({ data }: { data: any[] }) => (
 		<LineChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
 			<CartesianGrid strokeDasharray="3 3" strokeOpacity={0.5} />
 			<XAxis dataKey="date" stroke="#64748b" fontSize={12} />
-			<YAxis stroke="#64748b" fontSize={12} unit="%" domain={['dataMin - 5', 'dataMax + 5']} />
+			<YAxis stroke="#64748b" fontSize={12} unit="%" domain={['dataMin - 5', 'dataMax + 10']} />
 			<Tooltip
 				formatter={(value: number) => `${value}%`}
 				contentStyle={{
