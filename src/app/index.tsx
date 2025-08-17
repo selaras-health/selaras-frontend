@@ -11,14 +11,14 @@ import MainNavbar from '@/components/fragments/main-navbar';
 // --- ASSETS (TODO: Ganti dengan path aset final Anda) ---
 import logo from '@/assets/logo.png';
 import dashboardMockup from '@/assets/mockup/getstart-mockup.png';
+import sentraMockup from '@/assets/mockup/sentra-mockup.png'
+import cerdasMockup from '@/assets/mockup/cerdas-mockup.png'
+import jurnalMockup from '@/assets/mockup/jurnal-mockup.png'
+import analisisMockup from '@/assets/mockup/analisis-mockup.png'
+import sehatMockup from '@/assets/mockup/sehat-mockup.png'
+
 import { ShimmeringCTAButton } from '@/components/fragments/ShimmeringCTAButton';
-const featureImages = {
-	sentra: '/assets/mockup/sentra-mockup.png',
-	sehat: '/assets/mockup/sehat-mockup.png',
-	cerdas: '/assets/mockup/cerdas-mockup.png',
-	jurnal: '/assets/mockup/jurnal-mockup.png',
-	analisis: '/assets/mockup/analisis-mockup.png',
-};
+
 const testimonialAvatars = {
 	budi: 'https://randomuser.me/api/portraits/men/32.jpg',
 	rina: 'https://randomuser.me/api/portraits/women/44.jpg',
@@ -167,7 +167,7 @@ const FeatureScrollSection = () => {
 			tagline: 'Penilaian Risiko Cerdas dalam 5 Menit.',
 			description: 'Jawab serangkaian pertanyaan dinamis yang dirancang oleh ahli medis. AI kami akan menganalisis jawaban Anda untuk memberikan skor risiko dan wawasan mendalam.',
 			benefits: ['Proses cepat dan mudah', 'Pertanyaan dinamis & relevan', 'Dapatkan hasil instan setelah selesai'],
-			imageUrl: featureImages.analisis,
+			imageUrl: sentraMockup,
 			bgColor: '#fffbeb', // Amber 50
 		},
 		{
@@ -175,7 +175,7 @@ const FeatureScrollSection = () => {
 			tagline: 'Dasbor Kesehatan Jantung Anda.',
 			description: 'Semua data penting—tren risiko, ringkasan analisis, hingga progres program—tersaji dalam satu tampilan yang intuitif.',
 			benefits: ['Pantau tren kesehatan secara visual', 'Akses cepat ke laporan terakhir', 'Lihat semua progres dalam satu tempat'],
-			imageUrl: featureImages.sentra,
+			imageUrl: sentraMockup,
 			bgColor: '#FFE4E6', // Rose 50
 		},
 		{
@@ -183,7 +183,7 @@ const FeatureScrollSection = () => {
 			tagline: 'Catat dan Lihat Perjalanan Anda.',
 			description: 'Setiap analisis tersimpan rapi. Bandingkan hasil dari waktu ke waktu untuk melihat dampak positif dari perubahan gaya hidup Anda.',
 			benefits: ['Visualisasi progres yang memotivasi', 'Perbandingan hasil berdampingan', 'Riwayat lengkap untuk diskusi dokter'],
-			imageUrl: featureImages.jurnal,
+			imageUrl: jurnalMockup,
 			bgColor: '#e0f2fe', // Sky 100
 		},
 		{
@@ -191,7 +191,7 @@ const FeatureScrollSection = () => {
 			tagline: 'Rencana Aksi yang Dipersonalisasi.',
 			description: 'Selaras tidak hanya memberitahu risiko Anda, tapi juga memberikan rekomendasi program gaya hidup yang konkret dan dapat ditindaklanjuti.',
 			benefits: ['Rekomendasi berbasis data pribadi', 'Target mingguan yang terukur', 'Panduan langkah demi langkah'],
-			imageUrl: featureImages.sehat,
+			imageUrl: sehatMockup,
 			bgColor: '#f0fdf4', // Green 50
 		},
 		{
@@ -199,7 +199,7 @@ const FeatureScrollSection = () => {
 			tagline: 'Tanya Apapun tentang Laporan Anda.',
 			description: 'Didukung Google Gemini, tanya dalam bahasa natural dan dapatkan penjelasan istilah medis yang mudah dimengerti.',
 			benefits: ['Penjelasan instan dan akurat', 'Ubah data kompleks jadi sederhana', 'Lebih percaya diri saat diskusi dengan dokter'],
-			imageUrl: featureImages.cerdas,
+			imageUrl: cerdasMockup,
 			bgColor: '#f5f3ff', // Violet 50
 		},
 	];
