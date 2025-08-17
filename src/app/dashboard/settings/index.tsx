@@ -17,6 +17,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { ShimmeringCTAButton } from '@/components/fragments/ShimmeringCTAButton';
 
 // --- ANIMATION VARIANTS ---
 const pageVariants = {
@@ -171,12 +172,12 @@ const ProfileSection = () => {
 					</Button>
 				</div>
 			</CardHeader>
-			<CardContent className="p-6 space-y-6">
+			<CardContent className="px-6 pt-6 space-y-6">
 				<div className="flex flex-col sm:flex-row gap-6 items-center">
 					<div className="relative">
-						<Avatar className="w-24 h-24 border-4 border-white shadow-md">
+						<Avatar className="w-24 h-24 border-4 border-white shadow-2xl">
 							<AvatarImage src="/placeholder.svg?height=80&width=80" alt="Profile" />
-							<AvatarFallback className="bg-gradient-to-br from-rose-100 to-red-200 text-rose-600 text-4xl font-bold">{user?.first_name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+							<AvatarFallback className="bg-gradient-to-br from-red-300 via-pink-400 to-red-500  text-white text-4xl font-bold">{user?.first_name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
 						</Avatar>
 					</div>
 					<div className="flex-1 text-center sm:text-left">
@@ -209,7 +210,7 @@ const ProfileSection = () => {
 								</SelectContent>
 							</Select>
 						) : (
-							<p className="text-slate-800 mt-2 font-medium">{profileData.sex === 'male' ? 'Laki-laki' : 'Perempuan'}</p>
+							<p className="text-slate-800 mt-2 font-medium">{profileData.sex === 'male' ? 'Laki-laki' : profileData.sex === 'female' ? 'Perempuan' : '-'}</p>
 						)}
 					</div>
 					<div className="md:col-span-2">
@@ -235,19 +236,17 @@ const ProfileSection = () => {
 				<AnimatePresence>
 					{isEditing && (
 						<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end pt-4 border-t border-slate-200">
-							<Button
+							<ShimmeringCTAButton
 								onClick={handleSaveProfile}
+								isLoading={isSavingProfile}
 								disabled={isSavingProfile}
-								className="bg-gradient-to-r from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 text-white font-semibold w-32 cursor-pointer h-11 text-base"
+								shape="rectangle"
+								className="w-32 h-11 text-base"
+								loadingText="" // Mengirim string kosong agar hanya menampilkan spinner
 							>
-								{isSavingProfile ? (
-									<Loader2 className="animate-spin" />
-								) : (
-									<>
-										<Save className="h-4 w-4 mr-2" /> Simpan
-									</>
-								)}
-							</Button>
+								<Save className="h-4 w-4 mr-2" />
+								Simpan
+							</ShimmeringCTAButton>
 						</motion.div>
 					)}
 				</AnimatePresence>

@@ -549,7 +549,6 @@ export default function ProgramDashboardRevamped() {
 				}
 			} catch (error) {
 				console.error('Gagal mengambil data program:', error);
-				toast.error('Gagal memuat data program. Silakan coba lagi nanti.');
 				setProgramData(null);
 			} finally {
 				setIsLoading(false);

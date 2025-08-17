@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Label } from '@/components/ui/label';
 import ChatArea from '@/components/fragments/chat-area';
 import type { ChatConversationDetail, ChatHistoryItem } from '@/types';
+import { ShimmeringCTAButton } from '@/components/fragments/ShimmeringCTAButton';
 
 const AIChatPage = () => {
 	const auth = useAuth();
@@ -263,12 +264,7 @@ const AIChatPage = () => {
 									</Button>
 								</motion.div>
 							</div>
-							<motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 }} className="w-full py-4 border-t border-gray-200">
-								<Button variant="outline" onClick={handleNewChat} className="w-full text-rose-600 border-rose-200 hover:bg-rose-50 items-center justify-start cursor-pointer">
-									<Brain className="h-4 w-4 mr-2" />
-									Mulai Percakapan Baru
-								</Button>
-							</motion.div>
+
 							{/* Search */}
 							<motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 }} className="relative">
 								<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -380,10 +376,14 @@ const AIChatPage = () => {
 						{/* Sidebar Footer */}
 						<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="p-4 border-t border-gray-200">
 							<motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-								<Button variant="outline" size="sm" onClick={handleNewChat} className="w-full text-rose-600 border-rose-200 hover:bg-rose-50 transition-all duration-200 cursor-pointer">
+								<ShimmeringCTAButton
+									shape="rectangle"
+									onClick={handleNewChat}
+									className="w-full px-4 py-2 text-sm" // Meniru 'size="sm"' dengan padding dan ukuran teks
+								>
 									<Brain className="h-4 w-4 mr-2" />
 									Mulai Percakapan Baru
-								</Button>
+								</ShimmeringCTAButton>
 							</motion.div>
 						</motion.div>
 

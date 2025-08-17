@@ -1,686 +1,422 @@
-import { motion } from 'framer-motion';
-import { Heart, Shield, Zap, Users, BarChart3, MessageSquare, History, ChevronDown, ChevronRight, ArrowRight, Brain } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue } from 'framer-motion';
+import { Heart, ArrowRight, Brain, CheckCircle, Quote, Activity } from 'lucide-react';
+
+// Import komponen UI Anda
+import { CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import MainNavbar from '@/components/fragments/main-navbar';
+
+// --- ASSETS (TODO: Ganti dengan path aset final Anda) ---
 import logo from '@/assets/logo.png';
+import dashboardMockup from '@/assets/mockup/getstart-mockup.png';
+import { ShimmeringCTAButton } from '@/components/fragments/ShimmeringCTAButton';
+const featureImages = {
+	sentra: '/src/assets/mockup/sentra-mockup.png',
+	sehat: '/src/assets/mockup/sehat-mockup.png',
+	cerdas: '/src/assets/mockup/cerdas-mockup.png',
+	jurnal: '/src/assets/mockup/jurnal-mockup.png',
+	analisis: '/src/assets/mockup/analisis-mockup.png',
+};
+const testimonialAvatars = {
+	budi: 'https://randomuser.me/api/portraits/men/32.jpg',
+	rina: 'https://randomuser.me/api/portraits/women/44.jpg',
+	agus: 'https://randomuser.me/api/portraits/men/46.jpg',
+};
+
+// --- ANIMATION VARIANTS (Dengan Easing Profesional) ---
+const professionalEase = [0.25, 1, 0.5, 1] as const; // <-- Tambahkan 'as const' di sini
+const transition = { duration: 0.8, ease: professionalEase };
 
 const fadeInUp = {
-	initial: { opacity: 0, y: 60 },
-	animate: { opacity: 1, y: 0 },
-	transition: { duration: 0.6 },
+	initial: { opacity: 0, y: 40, scale: 0.98 },
+	whileInView: { opacity: 1, y: 0, scale: 1, transition },
+	viewport: { once: true, amount: 0.2 },
 };
-
 const staggerContainer = {
-	animate: {
-		transition: {
-			staggerChildren: 0.1,
-		},
-	},
+	whileInView: { transition: { staggerChildren: 0.1 } },
+	viewport: { once: true, amount: 0.2 },
 };
 
-const scaleIn = {
-	initial: { opacity: 0, scale: 0.8 },
-	animate: { opacity: 1, scale: 1 },
-	transition: { duration: 0.5 },
-};
+// --- REUSABLE & ENHANCED COMPONENTS ---
+const SectionHeader = ({ title, subtitle }: { title: string; subtitle: string }) => (
+	<motion.div initial="initial" whileInView="whileInView" variants={fadeInUp} className="text-center mb-20 max-w-3xl mx-auto">
+		<h2 className={`text-4xl lg:text-5xl font-extrabold mb-5 tracking-tight ${title === 'Didukung oleh Sains Teruji & AI Terkini' ? 'text-white' : 'text-slate-900'}`}>{title}</h2>
+		<p className="text-lg lg:text-xl text-slate-600">{subtitle}</p>
+	</motion.div>
+);
 
-const Homepage = () => {
-	// const [openFaq, setOpenFaq] = useState<number | null>(null)
+const ShineCard = ({ children, className }: { children: React.ReactNode; className?: string }) => {
+	const cardRef = useRef<HTMLDivElement>(null);
+	const mouseX = useMotionValue(0);
+	const mouseY = useMotionValue(0);
 
-	const scrollToSection = (id: string) => {
-		document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+	const handleMouseMove = ({ clientX, clientY }: React.MouseEvent) => {
+		if (!cardRef.current) return;
+		const { left, top } = cardRef.current.getBoundingClientRect();
+		mouseX.set(clientX - left);
+		mouseY.set(clientY - top);
 	};
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-white via-sky-50/30 to-red-50/20">
-			{/* Navbar */}
-			<MainNavbar />
-
-			{/* Hero Section */}
-			<section id="get-started" className="relative overflow-hidden">
-				<div className="absolute inset-0 bg-gradient-to-br from-white via-sky-50/50 to-red-50/30" />
-				<div className="relative max-w-7xl mx-auto px-6 py-20 lg:py-32">
-					<div className="grid lg:grid-cols-2 gap-12 items-center">
-						<motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} className="space-y-8">
-							<div className="space-y-6">
-								<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-									<Badge className="bg-red-100 text-red-700 hover:bg-red-200 mb-4">❤️ AI-Powered Heart Health</Badge>
-								</motion.div>
-
-								<motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-4xl lg:text-6xl font-bold text-slate-900 leading-tight">
-									Selaras – Deteksi Cepat, <span className="bg-gradient-to-r from-red-500 to-pink-600 bg-clip-text text-transparent">Cegah Sebelum Terlambat</span>
-								</motion.h1>
-
-								<motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-xl text-slate-600 leading-relaxed">
-									Dengan Selaras, kamu bisa pantau kesehatan jantung tanpa ribet lewat analisis AI pintar dan panduan langkah demi langkah yang mudah diikuti.
-								</motion.p>
-							</div>
-
-							<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="flex flex-col sm:flex-row gap-4">
-								<a href="/dashboard/analysis">
-									<Button size="lg" className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer">
-										<Heart className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-										Mulai Analisis Sekarang
-										<ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-									</Button>
-								</a>
-
-								<Button variant="outline" size="lg" onClick={() => scrollToSection('cara')} className="border-slate-300 text-slate-700 hover:bg-slate-50 px-8 py-4 rounded-xl group cursor-pointer">
-									Cara Kerjanya
-									<ChevronDown className="h-4 w-4 ml-2 group-hover:translate-y-1 transition-transform" />
-								</Button>
-							</motion.div>
-						</motion.div>
-
-						<motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6, duration: 0.8 }} className="relative">
-							<div className="relative w-full h-96 lg:h-[500px] flex items-center justify-center">
-								<motion.div
-									animate={{
-										scale: [1, 1.05, 1],
-										rotate: [0, 2, -2, 0],
-									}}
-									transition={{
-										duration: 6,
-										repeat: Number.POSITIVE_INFINITY,
-										ease: 'easeInOut',
-									}}
-									className="w-64 h-64 lg:w-80 lg:h-80 bg-gradient-to-br from-red-400 via-pink-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl"
-								>
-									<Heart className="h-32 w-32 lg:h-40 lg:w-40 text-white" fill="currentColor" />
-								</motion.div>
-
-								{/* Floating elements */}
-								<motion.div animate={{ y: [-10, 10, -10] }} transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }} className="absolute top-10 right-10 bg-white rounded-xl p-3 shadow-lg">
-									<BarChart3 className="h-6 w-6 text-sky-500" />
-								</motion.div>
-
-								<motion.div animate={{ y: [10, -10, 10] }} transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY }} className="absolute bottom-10 left-10 bg-white rounded-xl p-3 shadow-lg">
-									<Shield className="h-6 w-6 text-emerald-500" />
-								</motion.div>
-							</div>
-						</motion.div>
-					</div>
-				</div>
-			</section>
-
-			{/* Why Choose Selaras */}
-			<section id="alasan" className="py-20 bg-white">
-				<div className="max-w-7xl mx-auto px-6">
-					<motion.div variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }} className="text-center mb-16">
-						<h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Kenapa Harus Selaras?</h2>
-						<p className="text-xl text-slate-600 max-w-2xl mx-auto">Teknologi AI canggih bertemu perawatan yang penuh kepedulian demi melindungi hal yang paling penting dalam hidupmu.</p>
-					</motion.div>
-
-					<motion.div variants={staggerContainer} initial="initial" whileInView="animate" viewport={{ once: true }} className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-						{[
-							{
-								icon: Zap,
-								title: 'Analisis AI Cepat & Akurat',
-								description: 'Selaras memanfaatkan machine learning untuk memprediksi risiko jantung dari jawabanmu hanya dalam hitungan detik.',
-								color: 'from-yellow-400 to-orange-500',
-							},
-							{
-								icon: Shield,
-								title: 'Privasi & Keamanan Terjamin',
-								description: 'Data kamu terenkripsi dan disimpan dengan aman. Hanya kamu yang bisa mengakses hasil analisis kesehatan jantungmu.',
-								color: 'from-emerald-400 to-teal-500',
-							},
-							{
-								icon: Heart,
-								title: 'Gratis & Mudah Digunakan',
-								description: 'Tanpa alat medis, cukup jawab beberapa pertanyaan teknis atau non-teknis.',
-								color: 'from-red-400 to-pink-500',
-							},
-							{
-								icon: Users,
-								title: 'Dikembangkan bersama Profesional Medis',
-								description: 'Selaras dibuat bersama dokter spesialis jantung dan insinyur AI untuk menjamin keandalan hasilnya.',
-								color: 'from-blue-400 to-indigo-500',
-							},
-						].map((feature, index) => (
-							<motion.div key={index} variants={fadeInUp}>
-								<Card className="h-full hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50/50">
-									<CardContent className="p-6 text-center space-y-4">
-										<div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center shadow-lg`}>
-											<feature.icon className="h-8 w-8 text-white" />
-										</div>
-										<h3 className="text-xl font-semibold text-slate-900">{feature.title}</h3>
-										<p className="text-slate-600 leading-relaxed">{feature.description}</p>
-									</CardContent>
-								</Card>
-							</motion.div>
-						))}
-					</motion.div>
-				</div>
-			</section>
-
-			{/* Core Features */}
-			<section id="fitur" className="py-20 bg-gradient-to-br from-slate-50 to-sky-50/30">
-				<div className="max-w-7xl mx-auto px-6">
-					<motion.div variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }} className="text-center mb-16">
-						<h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Fitur Utama</h2>
-						<p className="text-xl text-slate-600 max-w-2xl mx-auto">Semua yang kamu butuhkan untuk memantau dan menjaga kesehatan jantung, ada dalam satu tempat.</p>
-					</motion.div>
-
-					<motion.div variants={staggerContainer} initial="initial" whileInView="animate" viewport={{ once: true }} className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
-						{[
-							{
-								icon: History,
-								title: 'Riwayat Analisis Lengkap',
-								description: 'Pantau hasil evaluasi kesehatan jantungmu dari waktu ke waktu.',
-							},
-							{
-								icon: BarChart3,
-								title: 'Grafik Risiko Interaktif (30 Hari)',
-								description: 'Lihat tren risiko jantung dalam bentuk visual yang mudah dipahami.',
-							},
-							{
-								icon: Brain,
-								title: 'Asisten Chat AI Seputar Jantung',
-								description: 'Dapatkan jawaban instan untuk pertanyaan seputar kesehatan jantungmu.',
-							},
-							// {
-							//   icon: Stethoscope,
-							//   title: "Live Consultation with Doctors",
-							//   description: "Connect with certified cardiologists when needed",
-							// },
-							{
-								icon: Heart,
-								title: 'Rekomendasi Pribadi.',
-								description: 'Terima saran gaya hidup yang disesuaikan dengan profil kesehatanmu.',
-							},
-							// {
-							//   icon: Bell,
-							//   title: "Smart Reminders to Re-analyze",
-							//   description: "Never miss important health check-ups",
-							// },
-						].map((feature, index) => (
-							<motion.div key={index} variants={scaleIn}>
-								<Card className="h-full hover:shadow-lg transition-all duration-300 group border-0 bg-white">
-									<CardContent className="p-6 space-y-4">
-										<div className="w-12 h-12 rounded-xl bg-gradient-to-r from-red-100 to-pink-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-											<feature.icon className="h-6 w-6 text-red-600" />
-										</div>
-										<h3 className="text-lg font-semibold text-slate-900">{feature.title}</h3>
-										<p className="text-slate-600">{feature.description}</p>
-									</CardContent>
-								</Card>
-							</motion.div>
-						))}
-					</motion.div>
-				</div>
-			</section>
-
-			{/* How Selaras Works */}
-			<section id="cara" className="py-20 bg-white">
-				<div className="max-w-7xl mx-auto px-6">
-					<motion.div variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }} className="text-center mb-16">
-						<h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Cara Kerja Selaras</h2>
-						<p className="text-xl text-slate-600 max-w-2xl mx-auto">Langkah sederhana untuk memantau kesehatan jantung dengan lebih baik.</p>
-					</motion.div>
-
-					<motion.div variants={staggerContainer} initial="initial" whileInView="animate" viewport={{ once: true }} className="grid lg:grid-cols-3 gap-12">
-						{[
-							{
-								step: '1',
-								title: 'Jawab Pertanyaan Teknis atau Non-Teknis',
-								description: 'Kamu dapat memilih tipe pertanyaan sesuai dengan informasi yang kamu miliki.',
-								icon: MessageSquare,
-								color: 'from-blue-500 to-indigo-600',
-							},
-							{
-								step: '2',
-								title: 'Analisis Instan oleh AI',
-								description: 'Hasil wawasan risiko jantung langsung muncul berdasarkan model medis terkini.',
-								icon: Zap,
-								color: 'from-yellow-500 to-orange-600',
-							},
-							{
-								step: '3',
-								title: 'Pantau Perkembangan & Dapatkan Rekomendasi',
-								description: 'Lanjutkan jika perlu, dan konsultasikan langsung dengan tenaga medis.',
-								icon: BarChart3,
-								color: 'from-emerald-500 to-teal-600',
-							},
-						].map((step, index) => (
-							<motion.div key={index} variants={fadeInUp} className="text-center">
-								<div className="relative mb-8">
-									<div className={`w-20 h-20 mx-auto rounded-2xl bg-gradient-to-r ${step.color} flex items-center justify-center shadow-lg mb-4`}>
-										<step.icon className="h-10 w-10 text-white" />
-									</div>
-									<div className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-slate-200">
-										<span className="text-sm font-bold text-slate-700">{step.step}</span>
-									</div>
-									{index < 2 && (
-										<div className="hidden lg:block absolute top-10 left-full w-full">
-											<ChevronRight className="h-6 w-6 text-slate-300 mx-auto" />
-										</div>
-									)}
-								</div>
-								<h3 className="text-xl font-semibold text-slate-900 mb-3">{step.title}</h3>
-								<p className="text-slate-600 leading-relaxed">{step.description}</p>
-							</motion.div>
-						))}
-					</motion.div>
-				</div>
-			</section>
-
-			{/* Designed for Everyone */}
-			<section id="untukmu" className="py-20 bg-gradient-to-br from-slate-50 to-sky-50/30">
-				<div className="max-w-7xl mx-auto px-6">
-					<motion.div variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }} className="text-center mb-16">
-						<h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Untuk Siapa Saja yang Peduli dengan Kesehatan Jantung</h2>
-						<p className="text-xl text-slate-600 max-w-3xl mx-auto">Aktif, sibuk, atau waspada — Selaras menyatu dengan gaya hidupmu.</p>
-					</motion.div>
-
-					<motion.div variants={staggerContainer} initial="initial" whileInView="animate" viewport={{ once: true }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-						{[
-							{
-								emoji: '👨‍💼',
-								title: 'Profesional Sibuk',
-								description: 'Cek harian yang cepat tanpa ganggu jam kerja.',
-							},
-							{
-								emoji: '👵',
-								title: 'Orang Tua',
-								description: 'Simpel dan mudah digunakan, bikin tenang seluruh keluarga.',
-							},
-							{
-								emoji: '💪',
-								title: 'Pecinta Olahraga',
-								description: 'Lihat dampak latihanmu terhadap kesehatan jantung.',
-							},
-							{
-								emoji: '❤️',
-								title: 'Orang dengan Risiko',
-								description: 'Peringatan dini membantu kamu tetap selangkah lebih maju.',
-							},
-						].map((persona, index) => (
-							<motion.div key={index} variants={fadeInUp}>
-								<Card className="h-full hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
-									<CardContent className="p-6 text-center space-y-4">
-										<div className="text-4xl mb-4">{persona.emoji}</div>
-										<h3 className="text-lg font-semibold text-slate-900">{persona.title}</h3>
-										<p className="text-slate-600 leading-relaxed text-sm">{persona.description}</p>
-									</CardContent>
-								</Card>
-							</motion.div>
-						))}
-					</motion.div>
-				</div>
-			</section>
-
-			{/* Best When Combined */}
-			<section id="sinergi" className="py-20 bg-white">
-				<div className="max-w-6xl mx-auto px-6">
-					<motion.div variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }} className="text-center mb-16">
-						<h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Lebih Kuat Saat Dipadukan, Bukan Untuk Bersaing</h2>
-						<p className="text-xl text-slate-600 max-w-3xl mx-auto">Selaras bukan pengganti check-up dokter, tapi pelengkap harian yang memberi konteks lebih dalam.</p>
-					</motion.div>
-
-					<motion.div variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }} className="overflow-x-auto">
-						<div className="min-w-full bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-							<table className="w-full">
-								<thead>
-									<tr className="bg-gradient-to-r from-slate-50 to-blue-50">
-										<th className="px-6 py-4 text-lg font-semibold text-slate-800 text-center">x</th>
-										<th className="px-6 py-4 text-left text-lg font-semibold text-slate-800">🩺 Cek Tahunan</th>
-										<th className="px-6 py-4 text-left text-lg font-semibold text-slate-800">💡 Selaras (Pencegahan Harian)</th>
-										<th className="px-6 py-4 text-left text-lg font-semibold text-slate-800">🤝 Gabungan Keduanya</th>
-									</tr>
-								</thead>
-								<tbody>
-									{[
-										{
-											label: 'Tujuan Utama',
-											medical: 'Diagnostik lengkap & lab',
-											Selaras: 'Screening cepat & pengingat kebiasaan',
-											combo: 'Data harian + analisis dokter',
-										},
-										{
-											label: 'Frekuensi',
-											medical: '1–2×/tahun',
-											Selaras: 'Harian / mingguan',
-											combo: 'Insight berkelanjutan',
-										},
-										{
-											label: 'Biaya',
-											medical: 'Variatif, cenderung tinggi',
-											Selaras: 'Gratis / hemat',
-											combo: 'Maksimalkan value check-up',
-										},
-										{
-											label: 'Akses Data',
-											medical: 'Hasil PDF / kertas',
-											Selaras: 'Riwayat real-time di app',
-											combo: 'Diskusi dokter lebih kaya data',
-										},
-										{
-											label: 'Tindakan Lanjutan',
-											medical: 'Rekomendasi dokter',
-											Selaras: 'Tips gaya hidup & alert risiko',
-											combo: 'Keputusan berbasis data lengkap',
-										},
-									].map((row, index) => (
-										<tr key={index} className={index % 2 === 0 ? 'bg-slate-50/30' : 'bg-white'}>
-											<td className="px-6 py-4 font-medium text-slate-800 border-r border-slate-200">{row.label}</td>
-											<td className="px-6 py-4 text-slate-600 border-r border-slate-200">{row.medical}</td>
-											<td className="px-6 py-4 text-slate-600 border-r border-slate-200">{row.Selaras}</td>
-											<td className="px-6 py-4 text-slate-600">{row.combo}</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-
-						<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-6 flex items-center justify-center gap-2 text-sm text-slate-500">
-							<div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
-								<span className="text-xs text-blue-600">🛈</span>
-							</div>
-							<p>Selaras bukan alat diagnosis. Selalu konsultasikan hasilmu ke tenaga medis profesional.</p>
-						</motion.div>
-					</motion.div>
-				</div>
-			</section>
-
-			{/* Created by Professionals */}
-			{/* <section id="team" className="py-20 bg-gradient-to-br from-blue-50/30 to-emerald-50/30">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            variants={fadeInUp}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
-              Created by Heart Health Professionals and AI Engineers
-            </h2>
-            <p className="text-xl text-slate-600 max-w-4xl mx-auto">
-              Selaras is the result of collaborative work between cardiologists, data scientists, and UX designers — so
-              you can trust every click.
-            </p>
-          </motion.div>
-
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-          >
-            {[
-              {
-                name: "Dr. Irwan Santosa",
-                role: "Cardiologist",
-                description: "15+ yrs experience",
-                avatar: "/placeholder.svg?height=80&width=80",
-              },
-              {
-                name: "Nabila F.",
-                role: "AI Engineer",
-                description: "Health Modeling",
-                avatar: "/placeholder.svg?height=80&width=80",
-              },
-              {
-                name: "Bima R.",
-                role: "Lead Product Designer",
-                description: "UX/UI Specialist",
-                avatar: "/placeholder.svg?height=80&width=80",
-              },
-              {
-                name: "Dr. Lisa Ardi",
-                role: "Clinical Research Advisor",
-                description: "Research & Validation",
-                avatar: "/placeholder.svg?height=80&width=80",
-              },
-            ].map((member, index) => (
-              <motion.div key={index} variants={fadeInUp}>
-                <Card className="h-full hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
-                  <CardContent className="p-6 text-center space-y-4">
-                    <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-slate-200 to-slate-300 overflow-hidden shadow-lg">
-                      <img
-                        src={member.avatar || "/placeholder.svg"}
-                        alt={`${member.name}'s profile`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement
-                          target.style.display = "none"
-                          target.nextElementSibling!.classList.remove("hidden")
-                        }}
-                      />
-                      <div className="hidden w-full h-full bg-gradient-to-br from-blue-400 to-emerald-500 flex items-center justify-center text-white font-bold text-xl">
-                        {member.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-900">{member.name}</h3>
-                      <p className="text-blue-600 font-medium text-sm">{member.role}</p>
-                      <p className="text-slate-600 text-sm">{member.description}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section> */}
-
-			{/* Emotional CTA */}
-			<section className="py-20 bg-gradient-to-br from-red-500 via-pink-500 to-red-600 text-white relative overflow-hidden">
-				<div className="absolute inset-0 bg-black/10" />
-				<div className="relative max-w-4xl mx-auto px-6 text-center">
-					<motion.div variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }} className="space-y-8">
-						<div className="space-y-6">
-							<motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }} className="w-24 h-24 mx-auto bg-white/20 rounded-full flex items-center justify-center">
-								<Heart className="h-12 w-12 text-white" fill="currentColor" />
-							</motion.div>
-
-							<h2 className="text-3xl lg:text-5xl font-bold leading-tight">Jantungmu Layak Diperhatikan.</h2>
-
-							<p className="text-xl lg:text-2xl text-red-100 max-w-3xl mx-auto leading-relaxed">Kesehatan jantung itu penting. Jangan tunggu gejala muncul. Lindungi jantungmu sejak dini dengan Selaras.</p>
-						</div>
-
-						<a href="/dashboard/analysis">
-							<Button size="lg" className="bg-white text-red-600 hover:bg-red-50 px-12 py-4 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 text-lg font-semibold group cursor-pointer">
-								<Heart className="h-6 w-6 mr-3 group-hover:scale-110 transition-transform" />
-								Mulai Analisis Gratis Sekarang
-								<ArrowRight className="h-5 w-5 ml-3 group-hover:translate-x-1 transition-transform" />
-							</Button>
-						</a>
-					</motion.div>
-				</div>
-			</section>
-
-			{/* FAQ */}
-			{/* <section id="faq" className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-6">
-          <motion.div
-            variants={fadeInUp}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Frequently Asked Questions</h2>
-            <p className="text-xl text-slate-600">Everything you need to know about Selaras</p>
-          </motion.div>
-
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="space-y-4"
-          >
-            {[
-              {
-                question: "Is Selaras free?",
-                answer:
-                  "Yes! Selaras offers a free tier that includes basic heart health analysis, limited AI chat, and access to your analysis history. Premium features like unlimited consultations and advanced reports are available with our paid plans.",
-              },
-              {
-                question: "How accurate is the analysis?",
-                answer:
-                  "Selaras's AI model has been trained on thousands of medical cases and validated by cardiologists. While highly accurate for risk assessment, it's designed to complement, not replace, professional medical advice.",
-              },
-              {
-                question: "Can I share the results with my doctor?",
-                answer:
-                  "Selaras generates detailed reports that you can easily share with your healthcare provider. Many doctors appreciate the comprehensive data to better understand your heart health trends.",
-              },
-              {
-                question: "How often should I analyze my heart?",
-                answer:
-                  "We recommend monthly analysis for general monitoring, or more frequently if you have risk factors. Selaras will send smart reminders based on your health profile and previous results.",
-              },
-              {
-                question: "What data does Selaras store?",
-                answer:
-                  "Selaras only stores the health information you provide and your analysis results. All data is encrypted and stored securely. You have full control over your data and can delete it anytime.",
-              },
-            ].map((faq, index) => (
-              <motion.div key={index} variants={fadeInUp}>
-                <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
-                  <CardContent className="p-0">
-                    <button
-                      onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                      className="w-full p-6 text-left flex items-center justify-between hover:bg-slate-50 transition-colors"
-                    >
-                      <h3 className="text-lg font-semibold text-slate-900">{faq.question}</h3>
-                      <motion.div animate={{ rotate: openFaq === index ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                        <ChevronDown className="h-5 w-5 text-slate-500" />
-                      </motion.div>
-                    </button>
-                    {openFaq === index && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="px-6 pb-6"
-                      >
-                        <p className="text-slate-600 leading-relaxed">{faq.answer}</p>
-                      </motion.div>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section> */}
-
-			{/* Footer */}
-			<footer className="bg-slate-900 text-white py-16">
-				<div className="max-w-7xl mx-auto px-6">
-					<div className="grid md:grid-cols-4 gap-8 mb-12">
-						<div className="space-y-4">
-							<div className="flex items-center gap-3">
-								{/* Ikon Hati diganti dengan tag img untuk logo */}
-								<img src={logo} alt="Selaras Logo" className="w-10 h-10" />
-								<div>
-									<h3 className="text-xl font-bold">Selaras</h3>
-									<p className="text-sm text-slate-400">Deteksi Cepat, Cegah Sebelum Terlambat</p>
-								</div>
-							</div>
-							<p className="text-slate-400 leading-relaxed">Melindungi jantung dengan pemantauan cerdas dan deteksi dini.</p>
-						</div>
-
-						<div>
-							<h4 className="font-semibold mb-4">Produk</h4>
-							<ul className="space-y-2 text-slate-400">
-								<li>
-									<a href="#" className="hover:text-white transition-colors">
-										Fitur
-									</a>
-								</li>
-								<li>
-									<a href="#" className="hover:text-white transition-colors">
-										Cara Kerja
-									</a>
-								</li>
-								<li>
-									<a href="#" className="hover:text-white transition-colors">
-										Harga
-									</a>
-								</li>
-								<li>
-									<a href="#" className="hover:text-white transition-colors">
-										API
-									</a>
-								</li>
-							</ul>
-						</div>
-
-						<div>
-							<h4 className="font-semibold mb-4">Dukungan</h4>
-							<ul className="space-y-2 text-slate-400">
-								<li>
-									<a href="#" className="hover:text-white transition-colors">
-										Pusat Bantuan
-									</a>
-								</li>
-								<li>
-									<a href="#" className="hover:text-white transition-colors">
-										Kontak
-									</a>
-								</li>
-								<li>
-									<a href="#" className="hover:text-white transition-colors">
-										Kebijakan Privasi
-									</a>
-								</li>
-								<li>
-									<a href="#" className="hover:text-white transition-colors">
-										Syarat & Ketentuan
-									</a>
-								</li>
-							</ul>
-						</div>
-
-						<div>
-							<h4 className="font-semibold mb-4">Perusahaan</h4>
-							<ul className="space-y-2 text-slate-400">
-								<li>
-									<a href="#" className="hover:text-white transition-colors">
-										Tentang Kami
-									</a>
-								</li>
-								<li>
-									<a href="#" className="hover:text-white transition-colors">
-										Blog
-									</a>
-								</li>
-								<li>
-									<a href="#" className="hover:text-white transition-colors">
-										Karier
-									</a>
-								</li>
-								<li>
-									<a href="#" className="hover:text-white transition-colors">
-										Media
-									</a>
-								</li>
-							</ul>
-						</div>
-					</div>
-
-					<div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-						<p className="text-slate-400 text-sm">© 2025 Selaras. All rights reserved.</p>
-						<div className="flex items-center gap-4 mt-4 md:mt-0">
-							<p className="text-slate-400 text-sm">Dibuat dengan ❤️ untuk kesehatan jantung yang lebih baik.</p>
-						</div>
-					</div>
-				</div>
-			</footer>
-		</div>
+		<motion.div ref={cardRef} onMouseMove={handleMouseMove} className={`relative overflow-hidden ${className}`} variants={fadeInUp}>
+			{children}
+			<motion.div
+				className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+				style={{
+					background: useTransform([mouseX, mouseY], ([newX, newY]) => `radial-gradient(500px circle at ${newX}px ${newY}px, rgba(255,255,255,0.5), transparent 80%)`),
+				}}
+			/>
+		</motion.div>
 	);
 };
 
-export default Homepage;
+// --- SECTIONS ---
+
+const HeroSection = () => {
+	const { scrollYProgress } = useScroll();
+	const y = useTransform(scrollYProgress, [0, 0.2], ['0%', '25%']); // Efek parallax halus
+
+	return (
+		<motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }} id="get-started" className="relative h-[90vh] lg:h-screen flex items-center bg-white overflow-hidden">
+			<div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white via-red-50/50 to-sky-50/50" />
+			<div className="relative max-w-7xl mx-auto px-6 z-10">
+				<div className="grid lg:grid-cols-2 gap-12 items-center">
+					<motion.div initial="initial" animate="whileInView" variants={staggerContainer} className="space-y-8 text-center lg:text-left">
+						<motion.div variants={fadeInUp}>
+							<Badge className="bg-red-100 text-red-700 hover:bg-red-200 py-1.5 px-4 text-sm font-medium">❤️ Dikombinasikan Analisis AI Cerdas</Badge>
+						</motion.div>
+						<motion.h1 variants={fadeInUp} className="text-5xl lg:text-7xl font-bold text-slate-900 leading-tight tracking-tighter">
+							Deteksi Cepat, <span className="bg-gradient-to-r from-red-500 to-pink-600 bg-clip-text text-transparent">Cegah Sebelum Terlambat.</span>
+						</motion.h1>
+						<motion.p variants={fadeInUp} className="text-xl text-slate-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
+							Selaras memberikan gambaran risiko jantung Anda melalui analisis AI dan menyajikan langkah preventif yang dipersonalisasi.
+						</motion.p>
+						<motion.div variants={fadeInUp}>
+							<ShimmeringCTAButton href="/dashboard/analysis">
+								Mulai Analisis Gratis <ArrowRight className="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
+							</ShimmeringCTAButton>
+						</motion.div>
+					</motion.div>
+					<motion.div style={{ y }} className="relative hidden lg:block">
+						<div className="bg-slate-100/70 rounded-3xl p-4 shadow-2xl shadow-slate-200/50 border border-slate-200/50">
+							<img src={dashboardMockup} alt="Selaras Dashboard Mockup" className="rounded-2xl shadow-lg" />
+						</div>
+					</motion.div>
+				</div>
+			</div>
+		</motion.section>
+	);
+};
+
+const SocialProofSection = () => {
+	const testimonials = [
+		{
+			quote: 'Aplikasi ini benar-benar membuka mata saya. Saya jadi lebih sadar akan kebiasaan kecil yang ternyata berpengaruh besar. Skor risiko saya turun 10% dalam 6 bulan!',
+			name: 'Budi Santoso',
+			role: '45, Manajer Proyek',
+			avatarUrl: testimonialAvatars.budi,
+		},
+		{
+			quote: 'Sebagai orang yang awam istilah medis, fitur Analis Cerdas sangat membantu. Saya jadi bisa mengerti laporan kesehatan saya sendiri tanpa merasa kebingungan.',
+			name: 'Rina Wijaya',
+			role: '32, Desainer Grafis',
+			avatarUrl: testimonialAvatars.rina,
+		},
+		{
+			quote: 'Sangat mudah digunakan. Saya bisa memantau progres kesehatan saya kapan saja. Sangat merekomendasikan Selaras untuk siapa saja yang peduli kesehatan.',
+			name: 'Agus Setiawan',
+			role: '52, Wiraswasta',
+			avatarUrl: testimonialAvatars.agus,
+		},
+	];
+	return (
+		<section id="testimoni" className="py-24 lg:py-32 bg-slate-50/70">
+			<div className="max-w-7xl mx-auto px-6">
+				<SectionHeader title="Dipercaya oleh Pengguna Seperti Anda" subtitle="Kami bangga telah membantu banyak individu mengambil langkah proaktif untuk kesehatan jantung mereka." />
+				<motion.div initial="initial" whileInView="whileInView" variants={staggerContainer} className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+					{testimonials.map((testimonial, index) => (
+						<ShineCard key={index} className="h-full bg-white shadow-lg rounded-2xl flex flex-col group">
+							<CardContent className="p-8 flex-grow flex flex-col z-10">
+								<Quote className="w-8 h-8 text-red-200 mb-4" />
+								<p className="text-slate-700 leading-relaxed mb-6 flex-grow">"{testimonial.quote}"</p>
+								<div className="flex items-center">
+									<img src={testimonial.avatarUrl} alt={testimonial.name} className="w-12 h-12 rounded-full mr-4 bg-slate-200" />
+									<div>
+										<p className="font-bold text-slate-900">{testimonial.name}</p>
+										<p className="text-slate-500">{testimonial.role}</p>
+									</div>
+								</div>
+							</CardContent>
+						</ShineCard>
+					))}
+				</motion.div>
+			</div>
+		</section>
+	);
+};
+
+// [Diperbarui] - FeatureScrollSection dengan 5 Fitur dan Alur Cerita yang Disempurnakan
+
+const FeatureScrollSection = () => {
+	// [DIUBAH] Menambahkan 'Lakukan Analisis' dan menyusun ulang urutan fitur
+	const features = [
+		{
+			id: 'analisis',
+			tagline: 'Penilaian Risiko Cerdas dalam 5 Menit.',
+			description: 'Jawab serangkaian pertanyaan dinamis yang dirancang oleh ahli medis. AI kami akan menganalisis jawaban Anda untuk memberikan skor risiko dan wawasan mendalam.',
+			benefits: ['Proses cepat dan mudah', 'Pertanyaan dinamis & relevan', 'Dapatkan hasil instan setelah selesai'],
+			imageUrl: featureImages.analisis,
+			bgColor: '#fffbeb', // Amber 50
+		},
+		{
+			id: 'sentra',
+			tagline: 'Dasbor Kesehatan Jantung Anda.',
+			description: 'Semua data penting—tren risiko, ringkasan analisis, hingga progres program—tersaji dalam satu tampilan yang intuitif.',
+			benefits: ['Pantau tren kesehatan secara visual', 'Akses cepat ke laporan terakhir', 'Lihat semua progres dalam satu tempat'],
+			imageUrl: featureImages.sentra,
+			bgColor: '#FFE4E6', // Rose 50
+		},
+		{
+			id: 'jurnal',
+			tagline: 'Catat dan Lihat Perjalanan Anda.',
+			description: 'Setiap analisis tersimpan rapi. Bandingkan hasil dari waktu ke waktu untuk melihat dampak positif dari perubahan gaya hidup Anda.',
+			benefits: ['Visualisasi progres yang memotivasi', 'Perbandingan hasil berdampingan', 'Riwayat lengkap untuk diskusi dokter'],
+			imageUrl: featureImages.jurnal,
+			bgColor: '#e0f2fe', // Sky 100
+		},
+		{
+			id: 'sehat',
+			tagline: 'Rencana Aksi yang Dipersonalisasi.',
+			description: 'Selaras tidak hanya memberitahu risiko Anda, tapi juga memberikan rekomendasi program gaya hidup yang konkret dan dapat ditindaklanjuti.',
+			benefits: ['Rekomendasi berbasis data pribadi', 'Target mingguan yang terukur', 'Panduan langkah demi langkah'],
+			imageUrl: featureImages.sehat,
+			bgColor: '#f0fdf4', // Green 50
+		},
+		{
+			id: 'cerdas',
+			tagline: 'Tanya Apapun tentang Laporan Anda.',
+			description: 'Didukung Google Gemini, tanya dalam bahasa natural dan dapatkan penjelasan istilah medis yang mudah dimengerti.',
+			benefits: ['Penjelasan instan dan akurat', 'Ubah data kompleks jadi sederhana', 'Lebih percaya diri saat diskusi dengan dokter'],
+			imageUrl: featureImages.cerdas,
+			bgColor: '#f5f3ff', // Violet 50
+		},
+	];
+	const [activeFeature, setActiveFeature] = useState(features[0]);
+
+	// Custom hook untuk Intersection Observer yang stabil
+	const useFeatureInView = (callback: () => void) => {
+		const ref = useRef<HTMLDivElement>(null);
+		useEffect(() => {
+			const observer = new IntersectionObserver(
+				([entry]) => {
+					if (entry.isIntersecting) callback();
+				},
+				{ root: null, rootMargin: '-50% 0px -50% 0px', threshold: 0 }
+			);
+			const currentRef = ref.current;
+			if (currentRef) observer.observe(currentRef);
+			return () => {
+				if (currentRef) observer.unobserve(currentRef);
+			};
+		}, [callback, ref]);
+		return ref;
+	};
+
+	return (
+		<motion.section id="fitur" className="relative transition-colors duration-700 ease-in-out" style={{ backgroundColor: activeFeature.bgColor }}>
+			<div className="max-w-7xl mx-auto px-6 py-24 lg:py-32">
+				<SectionHeader title="Semua yang Anda Butuhkan dalam Satu Aplikasi" subtitle="Fitur-fitur kami dirancang untuk memberdayakan Anda di setiap langkah perjalanan kesehatan jantung Anda." />
+				<div className="hidden lg:grid grid-cols-2 gap-24 items-start">
+					<div className="w-full">
+						{features.map((feature) => (
+							<div key={feature.id} ref={useFeatureInView(() => setActiveFeature(feature))} className="h-[85vh] flex items-center">
+								<motion.div className="space-y-6" animate={{ opacity: activeFeature.id === feature.id ? 1 : 0.3 }} transition={{ duration: 0.3 }}>
+									<h3 className="text-4xl font-bold text-slate-900">{feature.tagline}</h3>
+									<p className="text-lg text-slate-600 leading-relaxed">{feature.description}</p>
+									<ul className="space-y-3">
+										{feature.benefits.map((benefit, i) => (
+											<li key={i} className="flex items-center gap-3">
+												<CheckCircle className="w-6 h-6 text-emerald-500 flex-shrink-0" />
+												<span>{benefit}</span>
+											</li>
+										))}
+									</ul>
+								</motion.div>
+							</div>
+						))}
+					</div>
+					<div className="w-full h-screen sticky top-0 flex items-center justify-center">
+						{/* 1. Ubah div menjadi motion.div dan hapus `aspect-[4/3]`.
+    2. Tambahkan prop `layout` untuk animasi ukuran yang mulus.
+  */}
+						<motion.div layout="position" transition={{ duration: 0.5, ease: 'easeInOut' }} className="relative w-full max-w-lg bg-white/60 backdrop-blur-md rounded-3xl p-2 shadow-2xl shadow-slate-300/50 border">
+							<AnimatePresence mode="wait">
+								<motion.img
+									key={activeFeature.id}
+									src={activeFeature.imageUrl}
+									alt={`${activeFeature.tagline} mockup`}
+									// 3. Kelas CSS diubah agar ukuran gambar menjadi otomatis & responsif
+									className="relative max-w-full h-auto rounded-xl"
+									initial={{ opacity: 0, scale: 0.95 }}
+									animate={{ opacity: 1, scale: 1 }}
+									exit={{ opacity: 0, scale: 0.95 }}
+									transition={{ duration: 0.5, ease: 'easeInOut' }}
+								/>
+							</AnimatePresence>
+						</motion.div>
+					</div>
+				</div>
+				<div className="lg:hidden space-y-16">
+					{features.map((feature) => (
+						<motion.div key={feature.id} {...fadeInUp} className="space-y-6">
+							<div className="bg-slate-100 rounded-2xl shadow-lg aspect-video p-2">
+								<img src={feature.imageUrl} alt={`${feature.tagline} mockup`} className="w-full h-full object-cover rounded-xl" />
+							</div>
+							<div className="space-y-4 pt-4">
+								<h3 className="text-2xl font-bold text-slate-900">{feature.tagline}</h3>
+								<p className="text-slate-600 leading-relaxed">{feature.description}</p>
+								<ul className="space-y-3 pt-2">
+									{feature.benefits.map((benefit, i) => (
+										<li key={i} className="flex items-center gap-3">
+											<CheckCircle className="w-6 h-6 text-emerald-500 flex-shrink-0" />
+											<span className="text-slate-700">{benefit}</span>
+										</li>
+									))}
+								</ul>
+							</div>
+						</motion.div>
+					))}
+				</div>
+			</div>
+		</motion.section>
+	);
+};
+
+const BreatherSection = () => (
+	<section className="py-28 lg:py-40 bg-gradient-to-br from-red-500 to-pink-600 text-white">
+		<div className="max-w-4xl mx-auto px-6">
+			<motion.blockquote initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={transition} className="text-center text-3xl lg:text-4xl font-semibold leading-snug">
+				"Langkah kecil setiap hari adalah investasi terbesar untuk masa depan jantung Anda."
+			</motion.blockquote>
+		</div>
+	</section>
+);
+
+const TechBehindSection = () => (
+	<motion.section id="teknologi" className="relative py-24 lg:py-32 bg-slate-900 text-white overflow-hidden" viewport={{ once: true, amount: 0.4 }} transition={{ duration: 1, ease: professionalEase }}>
+		<div className="relative max-w-5xl mx-auto px-6 z-10">
+			<SectionHeader title="Didukung oleh Sains Teruji & AI Terkini" subtitle="Kami menggabungkan validasi klinis dengan kecerdasan buatan terdepan untuk hasil yang akurat dan personal." />
+			<motion.div initial="initial" whileInView="whileInView" variants={staggerContainer} className="grid md:grid-cols-2 gap-8">
+				<motion.div variants={fadeInUp}>
+					<div className="bg-slate-800/50 p-8 rounded-2xl h-full border border-slate-700 hover:bg-slate-800 transition-colors">
+						<div className="w-12 h-12 flex items-center justify-center rounded-lg bg-sky-500/10 text-sky-400 mb-4">
+							<Activity />
+						</div>
+						<h3 className="text-xl font-bold text-white mb-2">Validasi Klinis dengan SCORE2</h3>
+						<p className="text-slate-400">Menggunakan metode kalkulasi SCORE2 dari *European Society of Cardiology* untuk akurasi penilaian risiko sesuai standar medis global.</p>
+					</div>
+				</motion.div>
+				<motion.div variants={fadeInUp}>
+					<div className="bg-slate-800/50 p-8 rounded-2xl h-full border border-slate-700 hover:bg-slate-800 transition-colors">
+						<div className="w-12 h-12 flex items-center justify-center rounded-lg bg-purple-500/10 text-purple-400 mb-4">
+							<Brain />
+						</div>
+						<h3 className="text-xl font-bold text-white mb-2">Wawasan Lebih Dalam dengan Google Gemini</h3>
+						<p className="text-slate-400">Terintegrasi dengan Gemini untuk menerjemahkan data kesehatan kompleks menjadi penjelasan yang mudah dipahami dan rekomendasi yang lebih cerdas.</p>
+					</div>
+				</motion.div>
+			</motion.div>
+		</div>
+	</motion.section>
+);
+
+const FinalCTASection = () => (
+	<section className="relative py-24 lg:py-32 bg-red-600/85 text-white overflow-hidden">
+		<div className="relative max-w-4xl mx-auto px-6 text-center z-10">
+			<motion.div initial="initial" whileInView="whileInView" variants={staggerContainer} className="space-y-8">
+				<motion.div variants={fadeInUp} className="flex justify-center">
+					<motion.div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center" animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}>
+						<Heart className="w-10 h-10 text-white" />
+					</motion.div>
+				</motion.div>
+				<motion.h2 variants={fadeInUp} className="text-4xl lg:text-6xl font-bold leading-tight tracking-tighter">
+					Masa Depan Kesehatan Anda Ada di Tangan Anda.
+				</motion.h2>
+				<motion.p variants={fadeInUp} className="text-xl lg:text-2xl text-red-100 max-w-3xl mx-auto leading-relaxed">
+					Jangan menunggu hingga terlambat. Ambil langkah pertama untuk melindungi aset paling berharga Anda hari ini.
+				</motion.p>
+				<motion.div variants={fadeInUp}>
+					<ShimmeringCTAButton href="/dashboard/analysis">
+						Mulai Analisis Gratis <ArrowRight className="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
+					</ShimmeringCTAButton>
+				</motion.div>
+			</motion.div>
+		</div>
+	</section>
+);
+
+const Footer = () => (
+	<footer className="bg-slate-900 text-slate-300 py-16">
+		<div className="max-w-7xl mx-auto px-6">
+			<div className="grid md:grid-cols-5 gap-8 mb-12">
+				<div className="md:col-span-2 space-y-4">
+					<div className="flex items-center gap-3">
+						<img src={logo} alt="Selaras Logo" className="w-10 h-10" />
+						<div>
+							<h3 className="text-xl font-bold text-white">Selaras</h3>
+							<p className="text-sm text-slate-400">Deteksi Cepat, Cegah Sebelum Terlambat.</p>
+						</div>
+					</div>
+					<p className="text-slate-400 leading-relaxed max-w-sm">Memberdayakan individu untuk mengambil alih kesehatan jantung mereka melalui deteksi dini dan wawasan berbasis data.</p>
+				</div>
+				{[
+					{ title: 'Produk', links: ['Fitur', 'Teknologi', 'Testimoni'] },
+					{ title: 'Dukungan', links: ['Pusat Bantuan', 'Kontak', 'Kebijakan Privasi'] },
+					{ title: 'Perusahaan', links: ['Tentang Kami', 'Blog', 'Karier'] },
+				].map((column) => (
+					<div key={column.title}>
+						<h4 className="font-semibold text-white mb-4">{column.title}</h4>
+						<ul className="space-y-3 text-slate-400">
+							{column.links.map((link) => (
+								<li key={link}>
+									<a href="#" className="hover:text-red-400 transition-colors">
+										{link}
+									</a>
+								</li>
+							))}
+						</ul>
+					</div>
+				))}
+			</div>
+			<div className="border-t border-slate-800 pt-8 text-center md:text-left">
+				<p className="text-slate-500 text-sm">© {new Date().getFullYear()} Selaras. Dibuat dengan ❤️ di Indonesia untuk kesehatan yang lebih baik.</p>
+			</div>
+		</div>
+	</footer>
+);
+
+const ScrollProgressIndicator = () => {
+	const { scrollYProgress } = useScroll();
+	return <motion.div className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-pink-500 to-red-500 z-50" style={{ scaleX: scrollYProgress, transformOrigin: '0%' }} />;
+};
+
+// --- MAIN HOMEPAGE COMPONENT ---
+export default function Homepage() {
+	return (
+		<div className="min-h-screen bg-white font-sans antialiased">
+			<ScrollProgressIndicator />
+			<MainNavbar />
+			<main>
+				<HeroSection />
+				<SocialProofSection />
+				<FeatureScrollSection />
+				<BreatherSection />
+				<TechBehindSection />
+				<FinalCTASection />
+			</main>
+			<Footer />
+		</div>
+	);
+}

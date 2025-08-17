@@ -45,6 +45,7 @@ import { startNewProgram, updateProgramStatus } from '@/hooks/api/program';
 import { toast } from 'sonner';
 import { DOTS, usePagination } from '@/hooks/usePagination';
 import type { AnalysisRecord } from '@/types';
+import WarningCard from '@/components/fragments/warning-card';
 
 type HealthTrend = { direction: string; change_value: number; text: string };
 type ProgramProgress = { current_week: number; total_weeks: number; current_day_in_program: number; total_days_in_program: number };
@@ -424,7 +425,15 @@ export default function HealthyControlDashboard() {
 				<Loader2 className="animate-spin h-12 w-12 text-rose-500" />
 			</div>
 		);
-	if (!dashboardData || !processedData) return <div className="text-center py-20">Data tidak ditemukan.</div>;
+	if (!dashboardData || !processedData)
+		return (
+			<WarningCard
+				title="Anda Belum Memiliki Data"
+				description="Sepertinya Anda pengguna baru yang belum memiliki data apapun. Silahkan lakukan seetidaknya satu kali analisis dahulu."
+				btnText="Lakukan Analisis"
+				btnHref="/dashboard/analysis"
+			/>
+		);
 
 	const { summary } = dashboardData;
 	const { paginatedHistory, totalFilteredHistory, average, highest, lowest } = processedData;
@@ -643,7 +652,7 @@ const AdvancedPaginationControls = ({ currentPage, totalCount, pageSize, onPageC
 				}
 
 				return (
-					<Button key={index} variant={pageNumber === currentPage ? 'default' : 'outline'} size="icon" onClick={() => onPageChange(pageNumber as number)} className={pageNumber === currentPage ? 'bg-rose-600 text-white' : ''}>
+					<Button key={index} variant={pageNumber === currentPage ? 'default' : 'outline'} size="icon" onClick={() => onPageChange(pageNumber as number)} className={pageNumber === currentPage ? 'bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 text-white' : ''}>
 						{pageNumber}
 					</Button>
 				);

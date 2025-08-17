@@ -5,6 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReplyRenderer from './reply-renderer';
 import { useNavigate } from 'react-router-dom';
+import { ShimmeringCTAButton } from './ShimmeringCTAButton';
 
 interface ChatAreaPropsTypes {
 	isSidebarOpen?: boolean;
@@ -44,7 +45,9 @@ const ChatArea = (props: ChatAreaPropsTypes) => {
 			<div className="bg-white border-b border-gray-200 px-6 py-4">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-3">
-						<div className="p-2 bg-rose-100 rounded-lg">{setIsSidebarOpen ? <Brain className="h-6 w-6 text-rose-600" /> : <Bot className="h-6 w-6 text-rose-600" />}</div>
+						<div className="p-2 bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 text-white rounded-lg">
+							{setIsSidebarOpen ? <Brain className="h-6 w-6 text-white" /> : <Bot className="h-6 w-6 text-white" />}
+						</div>
 						<div className="hidden md:block">
 							<h1 className="text-xl font-bold text-gray-900">{chatTitle || 'AI Chat'}</h1>
 							{setIsSidebarOpen ? (
@@ -55,11 +58,15 @@ const ChatArea = (props: ChatAreaPropsTypes) => {
 						</div>
 					</div>
 					{setIsSidebarOpen ? (
-						<div className="flex items-center gap-2">
-							<Button variant="outline" size="sm" onClick={handleNewChat} className="text-rose-600 border-rose-200 hover:bg-rose-50 cursor-pointer">
+						<div className="flex items-center gap-5">
+							<ShimmeringCTAButton
+								shape="rectangle"
+								onClick={handleNewChat}
+								className="w-full px-4 py-2 text-sm" // Meniru 'size="sm"' dengan padding dan ukuran teks
+							>
 								<Brain className="h-4 w-4 mr-2" />
 								Mulai Percakapan Baru
-							</Button>
+							</ShimmeringCTAButton>
 							<Button variant="ghost" size="sm" onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-600 hover:bg-gray-100 cursor-pointer">
 								{isSidebarOpen ? (
 									<ChevronRight className="h-4 w-4" />
@@ -95,9 +102,9 @@ const ChatArea = (props: ChatAreaPropsTypes) => {
 									type: 'spring',
 									stiffness: 200,
 								}}
-								className="p-4 bg-rose-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center"
+								className="p-4 bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 text-white rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center"
 							>
-								{setIsSidebarOpen ? <Brain className="h-6 w-6 text-rose-600" /> : <Bot className="h-6 w-6 text-rose-600" />}
+								{setIsSidebarOpen ? <Brain className="h-6 w-6 text-white" /> : <Bot className="h-6 w-6 text-white" />}
 							</motion.div>
 							{setIsSidebarOpen ? (
 								<>
@@ -195,9 +202,9 @@ const ChatArea = (props: ChatAreaPropsTypes) => {
 												delay: index * 0.1 + 0.2,
 												type: 'spring',
 											}}
-											className="p-2 bg-rose-100 rounded-full h-10 w-10 flex items-center justify-center flex-shrink-0"
+											className="p-2 bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 rounded-full h-10 w-10 flex items-center justify-center flex-shrink-0"
 										>
-											{setIsSidebarOpen ? <Brain className="h-6 w-6 text-rose-600" /> : <Bot className="h-6 w-6 text-rose-600" />}
+											{setIsSidebarOpen ? <Brain className="h-6 w-6  text-white" /> : <Bot className="h-6 w-6  text-white" />}
 										</motion.div>
 									)}
 									<motion.div
@@ -281,9 +288,9 @@ const ChatArea = (props: ChatAreaPropsTypes) => {
 										repeat: Number.POSITIVE_INFINITY,
 										ease: 'linear',
 									}}
-									className="p-2 bg-rose-100 rounded-full h-10 w-10 flex items-center justify-center flex-shrink-0"
+									className="p-2 bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700  rounded-full h-10 w-10 flex items-center justify-center flex-shrink-0"
 								>
-									{setIsSidebarOpen ? <Brain className="h-6 w-6 text-rose-600" /> : <Bot className="h-6 w-6 text-rose-600" />}
+									{setIsSidebarOpen ? <Brain className="h-6 w-6 text-white" /> : <Bot className="h-6 w-6 text-white" />}
 								</motion.div>
 								<motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="max-w-3xl p-4 rounded-2xl bg-white border border-gray-200">
 									<div className="flex items-center gap-2">
@@ -344,7 +351,12 @@ const ChatArea = (props: ChatAreaPropsTypes) => {
 								// whileHover={{ scale: 1.1 }}
 								// whileTap={{ scale: 0.9 }}
 								>
-									<Button type="submit" size="sm" disabled={!input.trim() || isLoading} className="absolute right-2 top-2 h-8 w-8 p-0 bg-rose-500 hover:bg-rose-600 transition-all duration-200 cursor-pointer">
+									<Button
+										type="submit"
+										size="sm"
+										disabled={!input.trim() || isLoading}
+										className="absolute right-2 top-2 h-8 w-8 p-0 bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 text-white transition-all duration-200 cursor-pointer"
+									>
 										<motion.div animate={isLoading ? { rotate: 360 } : { rotate: 0 }} transition={{ duration: 0.5 }}>
 											<Send className="h-4 w-4" />
 										</motion.div>
@@ -353,7 +365,7 @@ const ChatArea = (props: ChatAreaPropsTypes) => {
 							</div>
 						</motion.div>
 						<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-xs text-gray-500 mt-2 text-center">
-							<span className='text-rose-600'>🛈</span> AI dapat membuat kesalahan. Selalu konsultasikan dengan dokter untuk masalah kesehatan serius.
+							<span className="text-rose-600">🛈</span> AI dapat membuat kesalahan. Selalu konsultasikan dengan dokter untuk masalah kesehatan serius.
 						</motion.p>
 					</form>
 				</motion.div>

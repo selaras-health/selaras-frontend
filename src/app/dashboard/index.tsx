@@ -17,6 +17,8 @@ import { useNavigate } from 'react-router-dom';
 import { startNewProgram, updateProgramStatus } from '@/hooks/api/program';
 import { toast } from 'sonner';
 import type { AnalysisRecord } from '@/types';
+import WarningCard from '@/components/fragments/warning-card';
+import { ShimmeringCTAButton } from '@/components/fragments/ShimmeringCTAButton';
 
 // --- TYPE DEFINITIONS (Based on new API structure) ---
 type HealthTrend = { direction: string; change_value: number; text: string };
@@ -250,7 +252,15 @@ export default function HealthyControlDashboard() {
 				<Loader2 className="animate-spin h-12 w-12 text-rose-500" />
 			</div>
 		);
-	if (!dashboardData || !processedData) return <div className="text-center py-20">Data tidak ditemukan.</div>;
+	if (!dashboardData || !processedData)
+		return (
+			<WarningCard
+				title="Anda Belum Memiliki Data"
+				description="Sepertinya Anda pengguna baru yang belum memiliki data apapun. Silahkan lakukan seetidaknya satu kali analisis dahulu."
+				btnText="Lakukan Analisis"
+				btnHref="/dashboard/analysis"
+			/>
+		);
 
 	const { summary, program_overview, latest_assessment_details } = dashboardData;
 	const { chartData, achievements, filteredHistory, average, highest, lowest } = processedData;
@@ -476,7 +486,7 @@ const ProgramCard = ({ program }: { program: ProgramOverview }) => {
 		if (!progress || !progress.total_days_in_program || current_day_in_program < 0) {
 			return 0;
 		} // Jika aktif dan data valid, baru hitung progres sebenarnya
-		return (current_day_in_program / progress.total_days_in_program) * 100 * 5;
+		return (current_day_in_program / progress.total_days_in_program) * 100 * 1.6;
 	};
 
 	const progressPercentage = getProgressPercentage();
@@ -495,7 +505,12 @@ const ProgramCard = ({ program }: { program: ProgramOverview }) => {
 					<div className="bg-gradient-to-br from-red-400 via-pink-500 to-red-600 h-2.5 rounded-full" style={{ width: `${progressPercentage}%` }}></div>
 				</div>
 				<Link to={`/dashboard/program/${slug}`} className="w-full md:w-auto">
-					<Button className="w-full py-[1.4rem] mt-4 bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700">{program.is_active ? 'Lanjutkan Program' : 'Lihat Laporan Program'}</Button>
+					<ShimmeringCTAButton
+						shape="rectangle"
+						className="w-full py-3 mt-4 text-base" // py-5 setara dengan ~1.25rem, mendekati 1.4rem
+					>
+						{program.is_active ? 'Lanjutkan Program' : 'Lihat Laporan Program'}
+					</ShimmeringCTAButton>{' '}
 				</Link>
 			</SidebarCard>
 		</motion.section>

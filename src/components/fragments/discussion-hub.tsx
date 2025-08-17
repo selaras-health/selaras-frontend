@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { Label } from '../ui/label';
+import { ShimmeringCTAButton } from './ShimmeringCTAButton';
 
 interface Discussion {
 	slug: string;
@@ -54,10 +55,10 @@ export function DiscussionHub({ programSlug, discussions, isReadOnly = false, on
 						<MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
 						<p className="text-slate-600 mb-4">Belum ada konsultasi yang dibuat. Mulai konsultasi baru untuk bertanya atau berbagi pengalaman.</p>
 						<Link to={`/dashboard/program/chat/new?program=${programSlug}&readOnly=${isReadOnly}`} className={isReadOnly ? 'pointer-events-none' : ''}>
-							<Button className={`bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 text-white cursor-pointer` + (isReadOnly ? 'cursor-not-allowed' : 'cursor-pointer')} disabled={isReadOnly}>
+							<ShimmeringCTAButton shape="rectangle" className="w-full" disabled={isReadOnly}>
 								<Plus className="w-4 h-4 mr-2" />
 								Mulai Konsultasi Baru
-							</Button>
+							</ShimmeringCTAButton>
 						</Link>
 					</div>
 				) : (
@@ -133,7 +134,7 @@ export function DiscussionHub({ programSlug, discussions, isReadOnly = false, on
 														</div>
 													</div>
 													<DialogFooter className="flex gap-2">
-														<Button variant="outline" onClick={() => setEditingId(null)} className='cursor-pointer'>
+														<Button variant="outline" onClick={() => setEditingId(null)} className="cursor-pointer">
 															Batal
 														</Button>
 														<Button onClick={() => handleEditSubmit(discussion.slug)} disabled={!editTitle.trim()} className="bg-rose-500 hover:bg-rose-600 cursor-pointer">
@@ -152,10 +153,10 @@ export function DiscussionHub({ programSlug, discussions, isReadOnly = false, on
 							</div>
 						))}
 						<Link to={`/dashboard/program/chat/new?program=${programSlug}&readOnly=${isReadOnly}`} className={isReadOnly ? 'pointer-events-none' : ''}>
-							<Button variant="outline" className={`bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 w-full cursor-pointer text-white` + (isReadOnly ? 'cursor-not-allowed' : 'cursor-pointer')} disabled={isReadOnly}>
-								<Plus className="w-4 h-4 mr-2 text-white" />
-								<span className='text-white'>Mulai Konsultasi Baru</span>
-							</Button>
+							<ShimmeringCTAButton shape="rectangle" className="w-full h-11" disabled={isReadOnly}>
+								<Plus className="w-4 h-4 mr-2" />
+								Mulai Konsultasi Baru
+							</ShimmeringCTAButton>{' '}
 						</Link>
 					</div>
 				)}

@@ -1,165 +1,199 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { X, ArrowRight } from 'lucide-react';
 import logo from '@/assets/logo.png';
+import { ShimmeringCTAButton } from './ShimmeringCTAButton';
 
+// --- Data Navigasi ---
 const navItems = [
-	{ name: 'Alasan', href: '#alasan' },
+	{ name: 'Keunggulan', href: '#testimoni' },
 	{ name: 'Fitur', href: '#fitur' },
-	{ name: 'Cara', href: '#cara' },
-	{ name: 'Untukmu', href: '#untukmu' },
-	{ name: 'Sinergi', href: '#sinergi' },
+	{ name: 'Teknologi', href: '#teknologi' },
 ];
 
-const MainNavbar = () => {
-	const [isScrolled, setIsScrolled] = useState(false);
-	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-	const [activeSection, setActiveSection] = useState('');
-
-	// Handle scroll effects
+// --- Custom Hook untuk Scroll Spy (tetap performatif) ---
+const useScrollSpy = (ids: string[]) => {
+	const [activeId, setActiveId] = useState('');
 	useEffect(() => {
-		const handleScroll = () => {
-			const scrollY = window.scrollY;
-			setIsScrolled(scrollY > 100);
-
-			// Scroll spy functionality
-			const sections = navItems.map((item) => item.href.substring(1));
-			const currentSection = sections.find((section) => {
-				const element = document.getElementById(section);
-				if (element) {
-					const rect = element.getBoundingClientRect();
-					return rect.top <= 100 && rect.bottom >= 100;
-				}
-				return false;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) setActiveId(entry.target.id);
+				});
+			},
+			{ rootMargin: '-30% 0px -70% 0px', threshold: 0 }
+		);
+		ids.forEach((id) => {
+			const element = document.getElementById(id);
+			if (element) observer.observe(element);
+		});
+		return () =>
+			ids.forEach((id) => {
+				const element = document.getElementById(id);
+				if (element) observer.unobserve(element);
 			});
+	}, [ids]);
+	return activeId;
+};
 
-			if (currentSection) {
-				setActiveSection(currentSection);
-			}
-		};
+// --- Komponen Utama Navbar ---
+export default function MainNavbar() {
+	const [isScrolled, setIsScrolled] = useState(false);
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-		window.addEventListener('scroll', handleScroll);
+	const sectionIds = navItems.map((item) => item.href.substring(1));
+	const activeSection = useScrollSpy(sectionIds);
+
+	useEffect(() => {
+		const handleScroll = () => setIsScrolled(window.scrollY > 50);
+		window.addEventListener('scroll', handleScroll, { passive: true });
 		return () => window.removeEventListener('scroll', handleScroll);
 	}, []);
 
-	// Smooth scroll to section
 	const scrollToSection = (href: string) => {
-		const element = document.getElementById(href.substring(1));
-		if (element) {
-			element.scrollIntoView({ behavior: 'smooth' });
-		}
-		setIsMobileMenuOpen(false);
+		const id = href.substring(1);
+		document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		setIsMenuOpen(false);
 	};
+
+	const professionalEase = [0.4, 0, 0.2, 1] as const;
+	const transition = { duration: 0.6, ease: professionalEase };
 
 	return (
 		<>
-			<motion.nav
-				initial={{ y: -100 }}
-				animate={{ y: 0 }}
-				transition={{ duration: 0.6, ease: 'easeOut' }}
-				className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20' : 'bg-white/60 backdrop-blur-sm'}`}
-				style={{
-					fontFamily: 'Inter, system-ui, sans-serif',
-				}}
-			>
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-					<div className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? 'h-16' : 'h-20'}`}>
-						{/* Logo */}
-						<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-							<img src={logo} alt="Selaras Logo" className={`transition-all duration-300 ${isScrolled ? 'h-7' : 'h-8'}`} />
-							<span className={`font-bold text-slate-900 transition-all duration-300 ${isScrolled ? 'text-xl' : 'text-2xl'}`}>Selaras</span>
-						</motion.div>
+			<div className="fixed top-0 left-0 right-0 z-50 h-24 px-6 max-w-7xl mx-auto">
+				<AnimatePresence>
+					{isScrolled ? (
+						// --- KONDISI SAAT SCROLL ---
+						<motion.nav
+							key="scrolled-nav"
+							layoutId="navbar-container"
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							transition={transition}
+							className="absolute top-4 left-6 right-6 h-16 bg-white/80 backdrop-blur-xl border border-white/50 rounded-2xl shadow-lg flex items-center justify-between px-6"
+						>
+							<motion.a
+								layoutId="logo"
+								href="#"
+								onClick={(e) => {
+									e.preventDefault();
+									window.scrollTo({ top: 0, behavior: 'smooth' });
+								}}
+								className="flex items-center justify-center gap-x-1"
+							>
+								<img src={logo} alt="Selaras Logo" className="h-8" />
+								<h1 className="text-lg font-bold text-rose-500">Selaras</h1>
+							</motion.a>
 
-						{/* Desktop Navigation */}
-						<div className="hidden md:flex items-center space-x-8">
+							<div className="hidden md:flex items-center gap-16">
+								{navItems.map((item) => (
+									<button
+										key={item.name}
+										onClick={() => scrollToSection(item.href)}
+										className={`relative text-sm font-semibold transition-colors ${activeSection === item.href.substring(1) ? 'text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
+									>
+										{item.name}
+										{activeSection === item.href.substring(1) && <motion.div layoutId="nav-underline" className="absolute -bottom-1 left-0 right-0 h-0.5 bg-red-500" />}
+									</button>
+								))}
+							</div>
+
+							{/* [DIUBAH] Menggunakan ShimmeringCTAButton dengan ukuran lebih kecil */}
+							<motion.div layoutId="cta-button">
+								<ShimmeringCTAButton href="/dashboard" className="px-5 py-2.5 text-sm">
+									Mulai Analisis
+								</ShimmeringCTAButton>
+							</motion.div>
+						</motion.nav>
+					) : (
+						// --- KONDISI DI PUNCAK HALAMAN ---
+						<div key="top-nav" className="absolute top-0 left-6 right-6 h-24 flex items-center justify-between">
+							<motion.a
+								layoutId="logo"
+								href="#"
+								onClick={(e) => {
+									e.preventDefault();
+									window.scrollTo({ top: 0, behavior: 'smooth' });
+								}}
+								className="flex items-center justify-center gap-x-1"
+							>
+								<img src={logo} alt="Selaras Logo" className="h-8" />
+								<h1 className="text-lg font-bold text-rose-500">Selaras</h1>
+							</motion.a>
+
+							<motion.button
+								layoutId="navbar-container"
+								onClick={() => setIsMenuOpen(true)}
+								className="hidden md:block bg-white/80 backdrop-blur-lg border border-white/50 rounded-full shadow-lg px-6 py-3 text-sm font-semibold text-slate-900"
+							>
+								Menu
+							</motion.button>
+
+							<button onClick={() => setIsMenuOpen(true)} className="md:hidden bg-white/80 backdrop-blur-lg border border-white/50 rounded-full shadow-lg px-6 py-3 text-sm font-semibold text-slate-900">
+								Menu{' '}
+							</button>
+
+							{/* [DIUBAH] Menggunakan ShimmeringCTAButton dengan ukuran standar */}
+							<motion.div layoutId="cta-button">
+								<ShimmeringCTAButton href="/dashboard" className="px-6 py-3 text-sm">
+									Mulai Analisis
+								</ShimmeringCTAButton>
+							</motion.div>
+						</div>
+					)}
+				</AnimatePresence>
+			</div>
+
+			{/* --- BABAK III: Pusat Komando (Menu Layar Penuh) --- */}
+			<AnimatePresence>
+				{isMenuOpen && (
+					<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5, ease: professionalEase }} className="fixed inset-0 bg-black/50 backdrop-blur-2xl z-50 flex flex-col p-8">
+						<div className="flex items-center justify-between w-full max-w-7xl mx-auto">
+							<a
+								href="#"
+								onClick={(e) => {
+									e.preventDefault();
+									window.scrollTo({ top: 0, behavior: 'smooth' });
+									setIsMenuOpen(false);
+								}}
+								className="flex items-center justify-center gap-x-1"
+							>
+								<img src={logo} alt="Selaras Logo" className="h-9" />
+
+								<h1 className="text-xl font-bold text-rose-500">Selaras</h1>
+							</a>
+							<motion.button whileTap={{ scale: 0.9 }} onClick={() => setIsMenuOpen(false)} className="p-2 rounded-full text-white">
+								<X className="h-8 w-8" />
+							</motion.button>
+						</div>
+
+						<motion.div className="flex-grow flex flex-col items-center justify-center gap-8" variants={{ visible: { transition: { staggerChildren: 0.1 } } }} initial="hidden" animate="visible" exit="hidden">
 							{navItems.map((item) => (
 								<motion.button
 									key={item.name}
 									onClick={() => scrollToSection(item.href)}
-									className={`relative px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${activeSection === item.href.substring(1) ? 'text-rose-600' : 'text-slate-700 hover:text-rose-600'}`}
-									whileHover={{ scale: 1.05 }}
-									whileTap={{ scale: 0.95 }}
+									className="text-4xl lg:text-6xl font-bold text-slate-300 hover:text-white transition-colors"
+									variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}
+									transition={{ duration: 0.7, ease: professionalEase }}
 								>
 									{item.name}
-									{activeSection === item.href.substring(1) && (
-										<motion.div layoutId="activeIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-rose-600 rounded-full" initial={false} transition={{ type: 'spring', stiffness: 300, damping: 30 }} />
-									)}
 								</motion.button>
 							))}
-						</div>
-
-						{/* CTA Button */}
-						<div className="hidden md:block">
-							<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-								<a href="/dashboard/analysis">
-									<Button
-										className={`bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer ${
-											isScrolled ? 'px-4 py-2 text-sm' : 'px-6 py-3'
-										}`}
-									>
-										🚀 Coba Gratis Sekarang
-									</Button>
-								</a>
-							</motion.div>
-						</div>
-
-						{/* Mobile Menu Button */}
-						<div className="md:hidden">
-							<motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 rounded-lg text-slate-700 hover:text-rose-600 hover:bg-rose-50 transition-colors duration-200 cursor-pointer">
-								{isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-							</motion.button>
-						</div>
-					</div>
-				</div>
-
-				{/* Mobile Menu */}
-				<AnimatePresence>
-					{isMobileMenuOpen && (
-						<motion.div
-							initial={{ opacity: 0, height: 0 }}
-							animate={{ opacity: 1, height: 'auto' }}
-							exit={{ opacity: 0, height: 0 }}
-							transition={{ duration: 0.3, ease: 'easeInOut' }}
-							className="md:hidden bg-white/95 backdrop-blur-md border-t border-white/20 shadow-lg"
-						>
-							<div className="px-4 py-6 space-y-4">
-								{navItems.map((item, index) => (
-									<motion.button
-										key={item.name}
-										initial={{ opacity: 0, x: -20 }}
-										animate={{ opacity: 1, x: 0 }}
-										transition={{ delay: index * 0.1 }}
-										onClick={() => scrollToSection(item.href)}
-										className={`block w-full text-left px-4 py-3 rounded-lg text-base font-medium transition-colors duration-200 cursor-pointer ${
-											activeSection === item.href.substring(1) ? 'text-rose-600 bg-rose-50' : 'text-slate-700 hover:text-rose-600 hover:bg-rose-50'
-										}`}
-									>
-										{item.name}
-									</motion.button>
-								))}
-
-								<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: navItems.length * 0.1 }} className="pt-4 border-t border-slate-200">
-									<a href="/dashboard/analysis">
-										<Button
-											className={`bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer ${
-												isScrolled ? 'px-4 py-2 text-sm' : 'px-6 py-3'
-											}`}
-										>
-											🚀 Coba Gratis Sekarang
-										</Button>
-									</a>
-								</motion.div>
-							</div>
 						</motion.div>
-					)}
-				</AnimatePresence>
-			</motion.nav>
 
-			{/* Spacer to prevent content from hiding behind fixed navbar */}
-			<div className={`transition-all duration-300 ${isScrolled ? 'h-16' : 'h-20'}`} />
+						<motion.div className="w-full max-w-7xl mx-auto flex justify-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0, transition: { delay: 0.4, ease: [0.25, 1, 0.5, 1] } }} exit={{ opacity: 0, y: 20 }}>
+							<ShimmeringCTAButton href="/dashboard" className="w-3xs md:w-lg  lg:w-3xl py-6 text-lg">
+								Masuk ke Selaras! <ArrowRight className="w-5 h-5 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
+							</ShimmeringCTAButton>
+						</motion.div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+
+			<div className="h-24" />
 		</>
 	);
-};
-
-export default MainNavbar;
+}

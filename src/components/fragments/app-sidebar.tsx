@@ -1,10 +1,10 @@
 import { Link, useLocation, BrowserRouter, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, HeartPulse, Sparkles, Settings, LogOut, Activity, Home, HistoryIcon, Brain } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sidebar as CustomSidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { ShimmeringCTAButton } from './ShimmeringCTAButton';
 
 // --- Mock Components for Demonstration ---
 // These are placeholders for your actual components.
@@ -37,7 +37,7 @@ export default function App() {
 					{/* Mobile Header (only shows hamburger menu) */}
 					<div className="lg:hidden p-4 flex items-center justify-between bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-30">
 						<div className="flex items-center gap-2">
-							<img className="w-8 h-8 text-rose-500" src=''  />
+							<img className="w-8 h-8 text-rose-500" src="" />
 							<h1 className="text-xl font-bold text-slate-800">Selaras</h1>
 						</div>
 						{/* The hamburger button is managed by the custom sidebar component logic */}
@@ -64,7 +64,7 @@ const mainNavItems = [
 	{ title: 'Kardia Sentra', url: '/dashboard', icon: LayoutDashboard },
 	{ title: 'Lakukan Analisis', url: '/dashboard/analysis', icon: Activity },
 	{ title: 'Langkah Sehat', url: '/dashboard/program', icon: HeartPulse },
-	{ title: 'Analis Cerdas', url: '/dashboard/ai-chat', icon: Brain},
+	{ title: 'Analis Cerdas', url: '/dashboard/ai-chat', icon: Brain },
 	{ title: 'Jurnal Progres', url: '/dashboard/history', icon: HistoryIcon },
 ];
 
@@ -88,7 +88,7 @@ export function AppSidebar({ user, handleLogout }: any) {
 			<SidebarHeader className="p-6">
 				<motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex items-center gap-3">
 					<div className="flex h-13 w-11 items-center justify-center rounded-lg bg-white text-white shadow-lg">
-						<img className="h-10 w-10 text-rose-500" src='/logo.png' />
+						<img className="h-10 w-10 text-rose-500" src="/logo.png" />
 					</div>
 					<div className="group-data-[collapsible=icon]:hidden">
 						<h1 className="text-xl font-bold text-rose-500">Selaras</h1>
@@ -98,16 +98,13 @@ export function AppSidebar({ user, handleLogout }: any) {
 			</SidebarHeader>
 
 			<SidebarContent className="px-4">
-				<div className="px-0 mb-4">
-					<Button
-						asChild
-						className="w-full h-11 text-lg font-semibold bg-gradient-to-r from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 text-white shadow-md hover:shadow-lg transition-shadow group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12 group-data-[collapsible=icon]:rounded-full"
-					>
-						<Link to="/dashboard/analysis">
-							<Sparkles className="w-5 h-5 group-data-[collapsible=icon]:m-auto" />
-							<span className="group-data-[collapsible=icon]:hidden ml-2">Analisis Baru</span>
-						</Link>
-					</Button>
+				<div className="px-0 mb-4 shadow-xl rounded-xl">
+					<Link to="/dashboard/analysis">
+						<ShimmeringCTAButton shape="rectangle" className="w-full h-11 text-base group-data-[collapsible=icon]:hidden ">
+							<Sparkles className="w-5 h-5 mr-2" />
+							Analisis Baru
+						</ShimmeringCTAButton>
+					</Link>
 				</div>
 
 				<SidebarGroup>
@@ -121,7 +118,7 @@ export function AppSidebar({ user, handleLogout }: any) {
 											asChild
 											isActive={userPath === item.url}
 											tooltip={item.title}
-											className="group relative overflow-hidden rounded-xl transition-all duration-200 hover:bg-rose-50 data-[active=true]:bg-rose-100 data-[active=true]:text-rose-600"
+											className="group relative overflow-hidden data-[active=true]:border rounded-xl transition-all duration-200 hover:bg-rose-50 data-[active=true]:bg-gradient-to-br data-[active=true]:from-red-100 data-[active=true]:via-pink-100 data-[active=true]:to-red-200 data-[active=true]:border-red-300 data-[active=true]:text-red-800"
 										>
 											<Link to={item.url} className="flex items-center gap-3 w-full">
 												<item.icon className={`h-5 w-5 transition-transform group-hover:scale-110 ${userPath === item.url ? 'text-rose-500' : 'text-slate-500'}`} />
@@ -169,9 +166,9 @@ export function AppSidebar({ user, handleLogout }: any) {
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<div className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-200/50 transition-colors cursor-pointer group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2">
-								<Avatar className="w-12 h-12">
+								<Avatar className="w-12 h-12 border-2 border-white shadow-2xl">
 									<AvatarImage src="/placeholder.svg?height=80&width=80" alt="Profile" />
-									<AvatarFallback className="bg-gradient-to-br from-rose-100 to-red-200 text-rose-600 font-bold">{user.first_name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+									<AvatarFallback className="bg-gradient-to-br from-red-300 via-pink-400 to-red-500  text-white font-bold">{user.first_name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
 								</Avatar>
 								<div className="grid flex-1 group-data-[collapsible=icon]:hidden">
 									<span className="truncate font-bold text-slate-800">
@@ -182,7 +179,7 @@ export function AppSidebar({ user, handleLogout }: any) {
 							</div>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg" side="right" align="end" sideOffset={12}>
-							<DropdownMenuLabel className='font-bold'>Akun Saya</DropdownMenuLabel>
+							<DropdownMenuLabel className="font-bold">Akun Saya</DropdownMenuLabel>
 							<DropdownMenuSeparator />
 							<DropdownMenuGroup>
 								<DropdownMenuItem asChild className="cursor-pointer font-medium">

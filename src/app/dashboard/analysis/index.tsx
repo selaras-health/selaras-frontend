@@ -15,6 +15,7 @@ import { newAnalysis, personalizeAnalysis } from '@/hooks/api/analysis';
 import WarningCard from '@/components/fragments/warning-card';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ShimmeringCTAButton } from '@/components/fragments/ShimmeringCTAButton';
 
 // --- TYPE DEFINITIONS ---
 type AnalysisFormData = any;
@@ -89,13 +90,13 @@ export default function AnalisisPageRevamped() {
 			type: string;
 			field?: string;
 			title?: string;
-			icon?: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
+			icon?: ForwardRefExoticComponent<Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>>;
 			options?: string[];
 			info?: string;
 			inputType?: string; // Add inputType to the type definition
 			unit?: string; // Added unit to the type definition
 		};
-	
+
 		const baseQuestions: Question[] = [
 			{ type: 'welcome' },
 			{ type: 'info', field: 'age', title: 'Usia Anda', icon: User },
@@ -359,9 +360,9 @@ const WelcomeSlide = ({ onNext }: any) => (
 			<p className="text-slate-600 mt-4 max-w-md mx-auto">Proses ini cepat, mudah, dan sepenuhnya rahasia. Kami akan memandu Anda langkah demi langkah.</p>
 		</motion.div>
 		<motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }}>
-			<Button onClick={onNext} size="lg" className="bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 text-white rounded-full px-10 py-6 text-lg shadow-lg shadow-rose-500/30">
+			<ShimmeringCTAButton onClick={onNext} shape="pill" className="px-10 py-3 text-lg shadow-rose-500/30">
 				Mulai Sekarang
-			</Button>
+			</ShimmeringCTAButton>
 		</motion.div>
 	</div>
 );
@@ -514,7 +515,9 @@ const InputSlide = ({ question, value, onUpdate, onNext, onBack, isComplete, for
 
 const HealthMetricSlide = ({ parameter, data, onUpdate, onNext, onBack, formData }: any) => {
 	const { key, title, unit, proxyQuestions, info } = parameter;
-	const { inputType, manualValue, proxyAnswers, completed } = data || {};
+	// --- FIX APPLIED HERE ---
+	// Default values are provided to prevent errors when `data` is undefined.
+	const { inputType, manualValue = '', proxyAnswers = {}, completed = false } = data || {};
 
 	const validationRules: { [key: string]: { min: number; max: number; message: string } } = {
 		sbp: { min: 50, max: 300, message: 'Nilai harus antara 50 dan 300 mmHg.' },
@@ -528,10 +531,10 @@ const HealthMetricSlide = ({ parameter, data, onUpdate, onNext, onBack, formData
 	const numericValue = parseFloat(manualValue);
 	const isInvalid = rules && manualValue.trim() !== '' && (numericValue < rules.min || numericValue > rules.max);
 
-	const handleMethodChange = (type: 'manual' | 'proxy') => onUpdate(key, { inputType: type, completed: false, manualValue: '', proxyAnswers: {} }); // --- 2. LOGIKA COMPLETION DIPERBARUI ---
+	const handleMethodChange = (type: 'manual' | 'proxy') => onUpdate(key, { inputType: type, completed: false, manualValue: '', proxyAnswers: {} });
 
 	const handleManualChange = (val: string) => {
-		const isNowValid = val.trim() !== '' && !isInvalid; // Tombol lanjut hanya aktif jika terisi & valid
+		const isNowValid = val.trim() !== '' && !isInvalid;
 		onUpdate(key, { manualValue: val, completed: isNowValid });
 	};
 
@@ -540,7 +543,7 @@ const HealthMetricSlide = ({ parameter, data, onUpdate, onNext, onBack, formData
 		const allAnswered = proxyQuestions.every((q: any) => newAnswers[q.key] !== undefined && newAnswers[q.key] !== '' && (Array.isArray(newAnswers[q.key]) ? newAnswers[q.key].length > 0 : true));
 		onUpdate(key, { proxyAnswers: newAnswers, completed: allAnswered });
 	};
-	// Perbarui status `completed` setiap kali `manualValue` berubah
+
 	useEffect(() => {
 		if (inputType === 'manual') {
 			const numericVal = parseFloat(manualValue);
@@ -561,11 +564,11 @@ const HealthMetricSlide = ({ parameter, data, onUpdate, onNext, onBack, formData
 			{!inputType ? (
 				<div className="w-full max-w-md space-y-4">
 					<p className="text-slate-600">Apakah Anda mengetahui nilai {title.split('(')[0].trim()} Anda?</p>
-					<Button onClick={() => handleMethodChange('manual')} className="w-full h-14 text-lg bg-white text-slate-800 border-2 border-slate-300 hover:bg-slate-100 hover:border-slate-400">
+					<Button onClick={() => handleMethodChange('manual')} className="w-full h-14 text-lg bg-white text-slate-800 border-2 hover:bg-white border-slate-200 hover:border-rose-300 active:bg-rose-500 active:border-rose-600 active:text-white">
 						Saya Tahu Angkanya
 					</Button>
 
-					<Button onClick={() => handleMethodChange('proxy')} className="w-full h-14 text-lg bg-white text-slate-800 border-2 border-slate-300 hover:bg-slate-100 hover:border-slate-400">
+					<Button onClick={() => handleMethodChange('proxy')} className="w-full h-14 text-lg bg-white text-slate-800 border-2 hover:bg-white border-slate-200 hover:border-rose-300 active:bg-rose-500 active:border-rose-600 active:text-white">
 						Tidak, Bantu Estimasi
 					</Button>
 				</div>
@@ -584,7 +587,7 @@ const HealthMetricSlide = ({ parameter, data, onUpdate, onNext, onBack, formData
 									<Input
 										type="number"
 										value={manualValue}
-										onChange={(e) => handleManualChange(e.target.value)} // --- 3. CLASS & PESAN ERROR DITAMBAHKAN ---
+										onChange={(e) => handleManualChange(e.target.value)}
 										className={`h-16 text-center text-3xl font-bold rounded-2xl border-2 ${isInvalid ? 'border-red-500' : 'border-slate-300 focus:border-rose-500'} focus:ring-rose-500`}
 										placeholder="0.0"
 									/>
