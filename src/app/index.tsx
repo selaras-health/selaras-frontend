@@ -13,11 +13,11 @@ import logo from '@/assets/logo.png';
 import dashboardMockup from '@/assets/mockup/getstart-mockup.png';
 import { ShimmeringCTAButton } from '@/components/fragments/ShimmeringCTAButton';
 const featureImages = {
-	sentra: '/src/assets/mockup/sentra-mockup.png',
-	sehat: '/src/assets/mockup/sehat-mockup.png',
-	cerdas: '/src/assets/mockup/cerdas-mockup.png',
-	jurnal: '/src/assets/mockup/jurnal-mockup.png',
-	analisis: '/src/assets/mockup/analisis-mockup.png',
+	sentra: '/assets/mockup/sentra-mockup.png',
+	sehat: '/assets/mockup/sehat-mockup.png',
+	cerdas: '/assets/mockup/cerdas-mockup.png',
+	jurnal: '/assets/mockup/jurnal-mockup.png',
+	analisis: '/assets/mockup/analisis-mockup.png',
 };
 const testimonialAvatars = {
 	budi: 'https://randomuser.me/api/portraits/men/32.jpg',
