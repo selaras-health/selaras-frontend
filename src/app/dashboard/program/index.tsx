@@ -429,14 +429,14 @@ const InteractiveWeeklyTimeline = ({ weeks, currentWeek, completedWeeks, onWeekS
 					<div className="flex items-center gap-2 overflow-x-auto pb-4 -mb-4 pt-2">
 						{weeks.map(({ week_number }) => {
 							const isCompleted = completedWeeks.includes(week_number);
-							const isCurrent = week_number === currentWeek;
-							const isSelected = week_number === selectedWeek;
+							const isCurrent = week_number == currentWeek;
+							const isSelected = week_number == selectedWeek;
 
 							return (
 								<motion.button
 									key={week_number}
 									ref={isSelected ? selectedWeekRef : null}
-									onClick={() => onWeekSelect(week_number)}
+									onClick={() => onWeekSelect(Number(week_number))}
 									className={`relative flex-shrink-0 w-20 h-24 flex flex-col items-center justify-center rounded-xl border-2 transition-all duration-300
                     ${
 											isSelected
@@ -559,8 +559,8 @@ export default function ProgramDashboardRevamped() {
 
 	const { currentWeekData, completedWeeks, isReadOnly, todayISO, groupedTasks } = useMemo(() => {
 		if (!programData) return { isReadOnly: true, completedWeeks: [], groupedTasks: {}, todayISO: '', currentWeekData: null };
-		const currentWeekData = programData.weeks.find((week) => Number(week.week_number) === selectedWeek);
-		const completedWeeks = programData.weeks.filter((week) => week.status === 'completed' || week.completion_percentage === 100).map((week) => week.week_number);
+		const currentWeekData = programData.weeks.find((week) => Number(week.week_number) == selectedWeek);
+		const completedWeeks = programData.weeks.filter((week) => week.status === 'completed' || week.completion_percentage == 100).map((week) => week.week_number);
 		const isProgramInactive = programData.status !== 'active';
 		const isReadOnly = isProgramInactive || (selectedWeek ?? 0) < programData.overall_progress.current_week_number;
 		const todayISO = getTodayISO();
@@ -594,7 +594,7 @@ export default function ProgramDashboardRevamped() {
 			const updatedWeeks = prevData.weeks.map((week) => {
 				if (Number(week.week_number) !== selectedWeek) return week;
 
-				const updatedTasks = week.tasks.map((task: any) => (task.id === id ? { ...task, is_completed: newStatus } : task));
+				const updatedTasks = week.tasks.map((task: any) => (task.id == id ? { ...task, is_completed: newStatus } : task));
 
 				const completedTasksInWeek = updatedTasks.filter((t: any) => t.is_completed).length;
 				const totalTasksInWeek = updatedTasks.length;
@@ -701,7 +701,7 @@ export default function ProgramDashboardRevamped() {
 	}
 
 	const todayTasks = groupedTasks?.[todayISO] || [];
-	const isRestDay = todayTasks.length === 0 && programData.status === 'active' && !((selectedWeek || 0) < programData.overall_progress.current_week_number);
+	const isRestDay = todayTasks.length == 0 && programData.status === 'active' && !((selectedWeek || 0) < programData.overall_progress.current_week_number);
 	const isPastWeek = (selectedWeek || 0) < programData.overall_progress.current_week_number;
 	const userName = auth?.user?.first_name?.split(' ')[0] || 'Pejuang';
 
@@ -784,7 +784,7 @@ export default function ProgramDashboardRevamped() {
 															todayTasks.map((mission: any) => {
 																const missionISO = convertAPIDateToISO(mission.task_date);
 																const isMissed = missionISO < todayISO && !mission.is_completed;
-																return <MissionItem key={mission.id} mission={mission} onComplete={handleMissionComplete} isReadOnly={isReadOnly} isMissed={isMissed} isGlowing={glowingMissionId === mission.id} />;
+																return <MissionItem key={mission.id} mission={mission} onComplete={handleMissionComplete} isReadOnly={isReadOnly} isMissed={isMissed} isGlowing={glowingMissionId == mission.id} />;
 															})
 														) : (
 															<div className="text-center py-12">
