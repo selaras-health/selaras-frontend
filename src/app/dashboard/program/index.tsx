@@ -219,7 +219,12 @@ const StatPill = ({ icon: Icon, label, value, colorClass = 'text-slate-700' }: {
 
 const WeeklyReflectionCard = ({ weekData }: { weekData: any }) => {
 	const reflection = useMemo(() => {
-		if (!weekData || !weekData.tasks) return null;
+		// Jika tidak ada data minggu atau tidak ada array tugas, atau array tugasnya kosong
+		if (!weekData || !weekData.tasks || weekData.tasks.length === 0) {
+			return { hasTasks: false }; // Kembalikan objek yang menandakan tidak ada tugas
+		}
+
+		// Jika ada tugas, lanjutkan kalkulasi seperti biasa
 		const totalMissions = weekData.tasks.length;
 		const completedMissions = weekData.tasks.filter((t: any) => t.is_completed).length;
 		const completionRate = totalMissions > 0 ? Math.round((completedMissions / totalMissions) * 100) : 0;
@@ -240,24 +245,28 @@ const WeeklyReflectionCard = ({ weekData }: { weekData: any }) => {
 				bestDay = new Date(date + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long' });
 			}
 		}
-		return { completionRate, bestDay, completedMissions, totalMissions };
+		return { hasTasks: true, completionRate, bestDay, completedMissions, totalMissions };
 	}, [weekData]);
 
-	if (!reflection) return null;
-
+	// Komponen sekarang tidak pernah mengembalikan null, jadi tidak akan ada celah kosong
 	return (
 		<motion.div variants={itemVariants} className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
 			<div className="flex items-center gap-3">
 				<BarChart2 className="w-6 h-6 text-blue-600 flex-shrink-0" />
 				<div>
 					<h4 className="text-lg font-bold text-blue-900">Refleksi Minggu Ini</h4>
-					<p className="mt-1 text-sm text-blue-800">
-						Anda menyelesaikan{' '}
-						<strong>
-							{reflection.completedMissions} dari {reflection.totalMissions} misi
-						</strong>{' '}
-						({reflection.completionRate}%). Hari terbaik Anda adalah <strong>{reflection.bestDay}</strong>. Terus pertahankan momentumnya!
-					</p>
+					{/* Tampilkan konten berdasarkan apakah ada tugas atau tidak */}
+					{reflection.hasTasks ? (
+						<p className="mt-1 text-sm text-blue-800">
+							Anda menyelesaikan{' '}
+							<strong>
+								{reflection.completedMissions} dari {reflection.totalMissions} misi
+							</strong>{' '}
+							({reflection.completionRate}%). Hari terbaik Anda adalah <strong>{reflection.bestDay}</strong>. Terus pertahankan momentumnya!
+						</p>
+					) : (
+						<p className="mt-1 text-sm text-blue-700 italic">Tidak ada misi yang tercatat untuk minggu ini.</p>
+					)}
 				</div>
 			</div>
 		</motion.div>
