@@ -219,12 +219,9 @@ const StatPill = ({ icon: Icon, label, value, colorClass = 'text-slate-700' }: {
 
 const WeeklyReflectionCard = ({ weekData }: { weekData: any }) => {
 	const reflection = useMemo(() => {
-		// Jika tidak ada data minggu atau tidak ada array tugas, atau array tugasnya kosong
 		if (!weekData || !weekData.tasks || weekData.tasks.length === 0) {
-			return { hasTasks: false }; // Kembalikan objek yang menandakan tidak ada tugas
+			return { hasTasks: false };
 		}
-
-		// Jika ada tugas, lanjutkan kalkulasi seperti biasa
 		const totalMissions = weekData.tasks.length;
 		const completedMissions = weekData.tasks.filter((t: any) => t.is_completed).length;
 		const completionRate = totalMissions > 0 ? Math.round((completedMissions / totalMissions) * 100) : 0;
@@ -248,24 +245,28 @@ const WeeklyReflectionCard = ({ weekData }: { weekData: any }) => {
 		return { hasTasks: true, completionRate, bestDay, completedMissions, totalMissions };
 	}, [weekData]);
 
-	// Komponen sekarang tidak pernah mengembalikan null, jadi tidak akan ada celah kosong
 	return (
-		<motion.div variants={itemVariants} className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
-			<div className="flex items-center gap-3">
-				<BarChart2 className="w-6 h-6 text-blue-600 flex-shrink-0" />
+		<motion.div
+			variants={itemVariants}
+			// 👇 STYLE DIUBAH MENYERUPAI KARTU UCAPAN (GREETING)
+			className="mb-6 p-6 shadow-xl rounded-2xl border border-green-300 bg-gradient-to-br from-green-100 via-emerald-200 to-green-300 text-green-800"
+		>
+			<div className="flex items-start gap-4">
+				{/* 👇 Icon diubah menjadi putih dan lebih kontras */}
+				<BarChart2 className="w-8 h-8 text-green-800/80 flex-shrink-0" />
 				<div>
-					<h4 className="text-lg font-bold text-blue-900">Refleksi Minggu Ini</h4>
-					{/* Tampilkan konten berdasarkan apakah ada tugas atau tidak */}
+					{/* 👇 Teks diubah menjadi putih */}
+					<h4 className="text-xl font-bold text-green-800">Refleksi Minggu Ini</h4>
 					{reflection.hasTasks ? (
-						<p className="mt-1 text-sm text-blue-800">
+						<p className="mt-1 text-base text-green-800">
 							Anda menyelesaikan{' '}
-							<strong>
+							<strong className="font-bold text-green-800">
 								{reflection.completedMissions} dari {reflection.totalMissions} misi
 							</strong>{' '}
-							({reflection.completionRate}%). Hari terbaik Anda adalah <strong>{reflection.bestDay}</strong>. Terus pertahankan momentumnya!
+							({reflection.completionRate}%). Hari terbaik Anda adalah <strong className="font-bold text-green-800">{reflection.bestDay}</strong>. Pertahankan momentumnya!
 						</p>
 					) : (
-						<p className="mt-1 text-sm text-blue-700 italic">Tidak ada misi yang tercatat untuk minggu ini.</p>
+						<p className="mt-1 text-base text-red-100 italic">Tidak ada misi yang tercatat untuk minggu ini.</p>
 					)}
 				</div>
 			</div>
@@ -711,7 +712,7 @@ export default function ProgramDashboardRevamped() {
 
 	const todayTasks = groupedTasks?.[todayISO] || [];
 	const isRestDay = todayTasks.length == 0 && programData.status === 'active' && !((selectedWeek || 0) < programData.overall_progress.current_week_number);
-	const isPastWeek = (selectedWeek || 0) < programData.overall_progress.current_week_number;
+	const isPastWeek = Number(selectedWeek || 0) < Number(programData.overall_progress.current_week_number);
 	const userName = auth?.user?.first_name?.split(' ')[0] || 'Pejuang';
 
 	return (
@@ -755,37 +756,52 @@ export default function ProgramDashboardRevamped() {
 								<CardContent>
 									<AnimatePresence mode="wait">
 										{isPastWeek ? (
-											<motion.div key="past-week" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-												<WeeklyReflectionCard weekData={currentWeekData} />
-												{Object.keys(groupedTasks).length > 0 ? (
-													Object.entries(groupedTasks)
-														.sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
-														.map(([date, missions]) => (
-															<div key={date} className="mb-6">
-																<h4 className="font-semibold text-slate-600 pb-2 mb-4 border-b">{new Date(date + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}</h4>
-																<div className="space-y-4">
-																	{(missions as any[]).map((mission: any) => (
-																		<MissionItem key={mission.id} mission={mission} onComplete={() => {}} isReadOnly={true} isMissed={!mission.is_completed} isGlowing={false} />
-																	))}
-																</div>
-															</div>
-														))
+											// --- AWAL PERBAIKAN ---
+											// Gunakan containerVariants untuk menjadi "dirigen" animasi
+											<motion.div
+												key="past-week-content"
+												variants={containerVariants} // 1. Terapkan variants container
+												initial="hidden" // 2. Beri aba-aba awal "hidden"
+												animate="visible" // 3. Beri aba-aba untuk beranimasi ke "visible"
+											>
+												{currentWeekData && currentWeekData.tasks && currentWeekData.tasks.length > 0 ? (
+													// Jika ada misi, tampilkan refleksi dan daftarnya
+													<>
+														<WeeklyReflectionCard weekData={currentWeekData} />
+														{Object.entries(groupedTasks)
+															.sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
+															.map(([date, missions]) => (
+																<motion.div key={date} variants={itemVariants} className="mb-6">
+																	<h4 className="font-semibold text-slate-600 pb-2 mb-4 border-b">{new Date(date + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}</h4>
+																	<div className="space-y-4">
+																		{(missions as any[]).map((mission: any) => (
+																			<MissionItem key={mission.id} mission={mission} onComplete={() => {}} isReadOnly={true} isMissed={!mission.is_completed} isGlowing={false} />
+																		))}
+																	</div>
+																</motion.div>
+															))}
+													</>
 												) : (
-													<div className="text-center py-12">
-														<BookOpen className="mx-auto w-12 h-12 text-slate-400 mb-4" />
-														<h3 className="text-xl font-bold text-slate-700">Belum Ada Misi</h3>
-														<p className="mt-2">Tidak ada misi yang dijadwalkan untuk minggu ini.</p>
-													</div>
+													// Jika tidak ada misi, tampilkan satu placeholder
+													<motion.div variants={itemVariants}>
+														<div className="text-center py-12">
+															<BookOpen className="mx-auto w-12 h-12 text-slate-400 mb-4" />
+															<h3 className="text-xl font-bold text-slate-700">Tidak Ada Misi Tercatat</h3>
+															<p className="mt-2 text-slate-500">Tidak ada misi yang dijadwalkan atau tercatat untuk minggu ini.</p>
+														</div>
+													</motion.div>
 												)}
 											</motion.div>
 										) : (
+											// --- AKHIR LOGIKA BARU ---
+											// 3. LOGIKA UNTUK MINGGU SEKARANG (TETAP SAMA)
 											<motion.div key="current-week" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
 												<DailyGreeting userName={userName} />
 												{isRestDay ? (
 													<div className="text-center py-12 px-4 border-2 border-dashed rounded-xl bg-sky-50 text-sky-700">
 														<Coffee className="mx-auto w-12 h-12 text-sky-400 mb-4" />
 														<h3 className="text-xl font-bold text-sky-800">Waktunya Bersantai!</h3>
-														<p className="mt-2">Tidak ada misi terjadwal untuk saat ini. Nikmati waktu istirahat Anda.</p>
+														<p className="mt-2">Tidak ada misi terjadwal untuk hari ini. Nikmati waktu istirahat Anda.</p>
 													</div>
 												) : (
 													<div className="space-y-4">
@@ -793,13 +809,13 @@ export default function ProgramDashboardRevamped() {
 															todayTasks.map((mission: any) => {
 																const missionISO = convertAPIDateToISO(mission.task_date);
 																const isMissed = missionISO < todayISO && !mission.is_completed;
-																return <MissionItem key={mission.id} mission={mission} onComplete={handleMissionComplete} isReadOnly={isReadOnly} isMissed={isMissed} isGlowing={glowingMissionId == mission.id} />;
+																return <MissionItem key={mission.id} mission={mission} onComplete={handleMissionComplete} isReadOnly={isReadOnly} isMissed={isMissed} isGlowing={glowingMissionId === mission.id} />;
 															})
 														) : (
 															<div className="text-center py-12">
 																<Loader2 className="mx-auto w-12 h-12 text-slate-400 mb-4 animate-spin" />
 																<h3 className="text-xl font-bold text-slate-700">Memuat Misi...</h3>
-																<p className="mt-2">Misi untuk minggu ini sedang disiapkan.</p>
+																<p className="mt-2">Misi untuk hari ini sedang disiapkan.</p>
 															</div>
 														)}
 													</div>
@@ -810,7 +826,7 @@ export default function ProgramDashboardRevamped() {
 								</CardContent>
 							</Card>
 						</motion.div>
-						<div className="lg:col-span-1 space-y-8 lg:sticky lg:top-8">
+						<div className="lg:col-span-1 space-y-8 lg:sticky lg:top-24">
 							<InteractiveWeeklyTimeline
 								weeks={programData.weeks}
 								currentWeek={programData.overall_progress.current_week_number}
