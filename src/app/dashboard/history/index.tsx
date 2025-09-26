@@ -222,6 +222,11 @@ export default function HealthyControlDashboard() {
 		loadData();
 	}, [token]);
 
+	// check date range debug
+	useEffect(() => {
+		console.log('Date Range:', dateRange);
+	}, [dateRange]);
+
 	const processedData = useMemo(() => {
 		if (!dashboardData) return null;
 		const { assessment_history, graph_data_30_days } = dashboardData;
@@ -243,7 +248,7 @@ export default function HealthyControlDashboard() {
 		const achievements = [];
 		if (total > 0) achievements.push({ icon: Star, title: 'Langkah Pertama' });
 		if (total >= 5) achievements.push({ icon: Award, title: 'Konsisten' });
-		if (dashboardData.program_overview.status === 'completed') achievements.push({ icon: Trophy, title: 'Pemenang Program' });
+		if (dashboardData.program_overview && dashboardData.program_overview.status === 'completed') achievements.push({ icon: Trophy, title: 'Pemenang Program' });
 		if (lowest < 20) achievements.push({ icon: Zap, title: 'Risiko Rendah' });
 
 		let baseHistory = assessment_history;
@@ -470,7 +475,7 @@ export default function HealthyControlDashboard() {
 								setProgramStatusFilter={setProgramStatusFilter}
 							/>
 							<motion.section variants={itemVariants}>
-								<JourneyCalendar history={dashboardData.assessment_history} onDateRangeSelect={handleDateRangeSelect} />
+								<JourneyCalendar history={dashboardData.assessment_history} onDateRangeSelect={handleDateRangeSelect} selectedRange={dateRange} />
 							</motion.section>
 						</aside>
 
@@ -671,7 +676,7 @@ const AdvancedPaginationControls = ({ currentPage, totalCount, pageSize, onPageC
 	);
 };
 
-const JourneyCalendar = ({ history, onDateRangeSelect }: { history: AnalysisRecord[]; onDateRangeSelect: (range: { start: Date | null; end: Date | null }) => void }) => {
+const JourneyCalendar = ({ history, onDateRangeSelect, selectedRange }: { history: AnalysisRecord[]; onDateRangeSelect: (range: { start: Date | null; end: Date | null }) => void; selectedRange: { start: Date | null; end: Date | null } }) => {
 	const [currentDate, setCurrentDate] = useState(new Date());
 	const [startDate, setStartDate] = useState<Date | null>(null);
 	const [hoverDate, setHoverDate] = useState<Date | null>(null);
@@ -681,6 +686,7 @@ const JourneyCalendar = ({ history, onDateRangeSelect }: { history: AnalysisReco
 		if (startDate && clickedDate.getTime() === startDate.getTime()) {
 			onDateRangeSelect({ start: clickedDate, end: clickedDate });
 			setStartDate(null);
+			setHoverDate(null);
 			return;
 		}
 		if (!startDate) {
@@ -692,6 +698,7 @@ const JourneyCalendar = ({ history, onDateRangeSelect }: { history: AnalysisReco
 				onDateRangeSelect({ start: startDate, end: clickedDate });
 			}
 			setStartDate(null);
+			setHoverDate(null);
 		}
 	};
 
@@ -742,9 +749,11 @@ const JourneyCalendar = ({ history, onDateRangeSelect }: { history: AnalysisReco
 						const hasRecord = !!record;
 
 						let inRange = false;
-						if (startDate && hoverDate) {
-							const start = Math.min(startDate.getTime(), hoverDate.getTime());
-							const end = Math.max(startDate.getTime(), hoverDate.getTime());
+						const rangeStart = selectedRange?.start ?? startDate;
+						const rangeEnd = selectedRange?.end ?? hoverDate;
+						if (rangeStart && rangeEnd) {
+							const start = Math.min(rangeStart.getTime(), rangeEnd.getTime());
+							const end = Math.max(rangeStart.getTime(), rangeEnd.getTime());
 							inRange = date.getTime() >= start && date.getTime() <= end;
 						}
 
@@ -772,8 +781,8 @@ const JourneyCalendar = ({ history, onDateRangeSelect }: { history: AnalysisReco
 								onMouseLeave={() => setHoverDate(null)}
 								onClick={() => handleDayClick(day)}
 								className={`relative h-10 flex items-center justify-center rounded-lg transition-all text-sm cursor-pointer ${
-									startDate?.getTime() === date.getTime() ? 'bg-rose-500 text-white' : inRange ? 'bg-rose-100' : hasRecord ? 'bg-gradient-to-br from-red-400 via-pink-500 to-red-600  text-white' : 'bg-slate-100 hover:bg-slate-200'
-								}`}
+                                     startDate?.getTime() === date.getTime() ? 'bg-rose-500 text-white' : inRange ? 'bg-rose-100' : hasRecord ? 'bg-gradient-to-br from-red-400 via-pink-500 to-red-600  text-white' : 'bg-slate-100 hover:bg-slate-200'
+                                 }`}
 							>
 								{day}
 							</motion.div>

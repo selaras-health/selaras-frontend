@@ -138,7 +138,7 @@ export default function HealthyControlDashboard() {
 		const achievements = [];
 		if (total > 0) achievements.push({ icon: Star, title: 'Langkah Pertama' });
 		if (total >= 5) achievements.push({ icon: Award, title: 'Konsisten' });
-		if (dashboardData.program_overview.status === 'completed') achievements.push({ icon: Trophy, title: 'Pemenang Program' });
+		if (dashboardData.program_overview && dashboardData.program_overview.status === 'completed') achievements.push({ icon: Trophy, title: 'Pemenang Program' });
 		if (lowest < 20) achievements.push({ icon: Zap, title: 'Risiko Rendah' });
 
 		// Filtering Logic
@@ -313,7 +313,11 @@ export default function HealthyControlDashboard() {
 						</main>
 
 						<aside className="w-full mt-8 lg:mt-0 lg:sticky lg:top-5 space-y-8">
-							<ProgramCard program={program_overview} />
+							{
+								program_overview && (
+									<ProgramCard program={program_overview} />
+								)
+							}
 
 							<SidebarCard title="Statistik Kamu" icon={<BarChart />}>
 								<div className="grid grid-cols-2 gap-4 mb-1">
