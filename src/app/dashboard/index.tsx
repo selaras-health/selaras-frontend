@@ -138,7 +138,7 @@ export default function HealthyControlDashboard() {
 		const achievements = [];
 		if (total > 0) achievements.push({ icon: Star, title: 'Langkah Pertama' });
 		if (total >= 5) achievements.push({ icon: Award, title: 'Konsisten' });
-		if (dashboardData.program_overview.status === 'completed') achievements.push({ icon: Trophy, title: 'Pemenang Program' });
+		if (dashboardData.program_overview?.status === 'completed') achievements.push({ icon: Trophy, title: 'Pemenang Program' });
 		if (lowest < 20) achievements.push({ icon: Zap, title: 'Risiko Rendah' });
 
 		// Filtering Logic
@@ -473,6 +473,20 @@ const TabButton = ({ label, isActive, onClick }: { label: string; isActive: bool
 );
 
 const ProgramCard = ({ program }: { program: ProgramOverview }) => {
+	if (!program) {
+		return (
+			<motion.section variants={itemVariants}>
+				<SidebarCard title="Program Anda" icon={<HeartPulse className="text-rose-500" />}>
+					<p className="text-slate-600 text-center mb-4">Anda belum memiliki program aktif.</p>
+					<Link to="/dashboard/analysis" className="w-full">
+						<Button variant="outline" className="w-full">
+							<Zap size={16} className="mr-2" /> Mulai Analisis Baru
+						</Button>
+					</Link>
+				</SidebarCard>
+			</motion.section>
+		);
+	}
 	const { status, progress, slug, is_active } = program;
 	const current_day_in_program = progress?.current_day_in_program * -1 || 0;
 

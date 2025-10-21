@@ -1,6 +1,6 @@
 import { Link, useLocation, BrowserRouter, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, HeartPulse, Sparkles, Settings, LogOut, Activity, Home, HistoryIcon, Brain } from 'lucide-react';
+import { LayoutDashboard, HeartPulse, Sparkles, Settings, LogOut, Home, HistoryIcon, Brain } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sidebar as CustomSidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
@@ -62,7 +62,7 @@ export default function App() {
 // --- Original Navigation Data ---
 const mainNavItems = [
 	{ title: 'Kardia Sentra', url: '/dashboard', icon: LayoutDashboard },
-	{ title: 'Lakukan Analisis', url: '/dashboard/analysis', icon: Activity },
+	{ title: 'Lakukan Analisis', url: '/dashboard/analysis', icon: Sparkles },
 	{ title: 'Langkah Sehat', url: '/dashboard/program', icon: HeartPulse },
 	{ title: 'Analis Cerdas', url: '/dashboard/ai-chat', icon: Brain },
 	{ title: 'Jurnal Progres', url: '/dashboard/history', icon: HistoryIcon },
@@ -102,7 +102,7 @@ export function AppSidebar({ user, handleLogout }: any) {
 					<Link to="/dashboard/analysis">
 						<ShimmeringCTAButton shape="rectangle" className="w-full h-11 text-base group-data-[collapsible=icon]:hidden ">
 							<Sparkles className="w-5 h-5 mr-2" />
-							Analisis Baru
+							Lakukan Analisis
 						</ShimmeringCTAButton>
 					</Link>
 				</div>

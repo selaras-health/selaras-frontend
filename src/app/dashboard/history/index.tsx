@@ -149,7 +149,7 @@ const formatDay = (dateString: string): string => {
 	return 'Hari Tidak Valid';
 };
 
-const formatRiskPercentage = (value: number | null | undefined): string => (value || 0).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const formatRiskPercentage = (value: number | null | undefined): string => (value || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const getRiskStyling = (code?: string) => {
 	switch (code) {
 		case 'LOW_MODERATE':
@@ -243,7 +243,7 @@ export default function HealthyControlDashboard() {
 		const achievements = [];
 		if (total > 0) achievements.push({ icon: Star, title: 'Langkah Pertama' });
 		if (total >= 5) achievements.push({ icon: Award, title: 'Konsisten' });
-		if (dashboardData.program_overview.status === 'completed') achievements.push({ icon: Trophy, title: 'Pemenang Program' });
+		if (dashboardData.program_overview?.status === 'completed') achievements.push({ icon: Trophy, title: 'Pemenang Program' });
 		if (lowest < 20) achievements.push({ icon: Zap, title: 'Risiko Rendah' });
 
 		let baseHistory = assessment_history;
@@ -652,7 +652,13 @@ const AdvancedPaginationControls = ({ currentPage, totalCount, pageSize, onPageC
 				}
 
 				return (
-					<Button key={index} variant={pageNumber === currentPage ? 'default' : 'outline'} size="icon" onClick={() => onPageChange(pageNumber as number)} className={pageNumber === currentPage ? 'bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 text-white' : ''}>
+					<Button
+						key={index}
+						variant={pageNumber === currentPage ? 'default' : 'outline'}
+						size="icon"
+						onClick={() => onPageChange(pageNumber as number)}
+						className={pageNumber === currentPage ? 'bg-gradient-to-br from-red-400 via-pink-500 to-red-600 hover:from-red-500 hover:via-pink-600 hover:to-red-700 text-white' : ''}
+					>
 						{pageNumber}
 					</Button>
 				);

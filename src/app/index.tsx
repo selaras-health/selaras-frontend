@@ -167,7 +167,7 @@ const FeatureScrollSection = () => {
 			tagline: 'Penilaian Risiko Cerdas dalam 5 Menit.',
 			description: 'Jawab serangkaian pertanyaan dinamis yang dirancang oleh ahli medis. AI kami akan menganalisis jawaban Anda untuk memberikan skor risiko dan wawasan mendalam.',
 			benefits: ['Proses cepat dan mudah', 'Pertanyaan dinamis & relevan', 'Dapatkan hasil instan setelah selesai'],
-			imageUrl: sentraMockup,
+			imageUrl: analisisMockup,
 			bgColor: '#fffbeb', // Amber 50
 		},
 		{
@@ -333,7 +333,7 @@ const TechBehindSection = () => (
 );
 
 const FinalCTASection = () => (
-	<section className="relative py-24 lg:py-32 bg-red-600/85 text-white overflow-hidden">
+	<section className="relative py-24 lg:py-32 bg-red-600/78 text-white overflow-hidden">
 		<div className="relative max-w-4xl mx-auto px-6 text-center z-10">
 			<motion.div initial="initial" whileInView="whileInView" variants={staggerContainer} className="space-y-8">
 				<motion.div variants={fadeInUp} className="flex justify-center">

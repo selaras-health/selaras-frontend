@@ -175,7 +175,7 @@ const ProfileSection = () => {
 			<CardContent className="px-6 pt-6 space-y-6">
 				<div className="flex flex-col sm:flex-row gap-6 items-center">
 					<div className="relative">
-						<Avatar className="w-24 h-24 border-4 border-white shadow-2xl">
+						<Avatar className="w-24 h-24 border-4 border-white shadow-lg">
 							<AvatarImage src="/placeholder.svg?height=80&width=80" alt="Profile" />
 							<AvatarFallback className="bg-gradient-to-br from-red-300 via-pink-400 to-red-500  text-white text-4xl font-bold">{user?.first_name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
 						</Avatar>
