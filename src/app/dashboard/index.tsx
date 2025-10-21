@@ -476,10 +476,10 @@ const ProgramCard = ({ program }: { program: ProgramOverview }) => {
 		return (
 			<motion.section variants={itemVariants}>
 				<SidebarCard title="Program Anda" icon={<HeartPulse className="text-rose-500" />}>
-					<p className="text-slate-600 text-center mb-4">Anda belum memiliki program aktif.</p>
+					<p className="text-slate-600 text-center mb-4">Anda belum memiliki Langkah Sehat aktif.</p>
 					<Link to="/dashboard/history" className="w-full">
 						<Button variant="outline" className="w-full cursor-pointer">
-							<Zap size={16} className="mr-2" /> Mulai Analisis Baru
+							<Zap size={16} className="mr-2" /> Mulai Langkah Sehat Baru
 						</Button>
 					</Link>
 				</SidebarCard>
