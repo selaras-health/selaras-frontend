@@ -314,7 +314,6 @@ export default function HealthyControlDashboard() {
 
 						<aside className="w-full mt-8 lg:mt-0 lg:sticky lg:top-5 space-y-8">
 							<ProgramCard program={program_overview} />
-
 							<SidebarCard title="Statistik Kamu" icon={<BarChart />}>
 								<div className="grid grid-cols-2 gap-4 mb-1">
 									<StatCard icon={<BarChart />} title="Total Analisis" value={summary.total_assessments} />
@@ -478,8 +477,8 @@ const ProgramCard = ({ program }: { program: ProgramOverview }) => {
 			<motion.section variants={itemVariants}>
 				<SidebarCard title="Program Anda" icon={<HeartPulse className="text-rose-500" />}>
 					<p className="text-slate-600 text-center mb-4">Anda belum memiliki program aktif.</p>
-					<Link to="/dashboard/analysis" className="w-full">
-						<Button variant="outline" className="w-full">
+					<Link to="/dashboard/history" className="w-full">
+						<Button variant="outline" className="w-full cursor-pointer">
 							<Zap size={16} className="mr-2" /> Mulai Analisis Baru
 						</Button>
 					</Link>

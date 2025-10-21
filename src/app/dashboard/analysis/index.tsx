@@ -251,7 +251,7 @@ export default function AnalisisPageRevamped() {
 			setLoadingMessage('Selesai! Mengarahkan Anda ke hasil...');
 			setLoadingProgress(100);
 			toast.success('Analisis Anda berhasil dibuat!');
-			setTimeout(() => navigate('/dashboard'), 2000);
+			setTimeout(() => navigate('/dashboard/history'), 2000);
 		} catch (error) {
 			console.error('Analysis submission failed:', error);
 			toast.error('Oops! Terjadi kesalahan saat memproses analisis Anda. Silakan coba lagi.');
@@ -686,7 +686,7 @@ const SummarySlide = ({ formData, user, onSubmit, onBack }: any) => {
 	const totalHealthParams = Object.keys(formData.healthProfile).length;
 
 	return (
-		<div className="flex flex-col items-center text-center p-4 space-y-6 w-full">
+		<div className="flex flex-col items-center text-center p-4 py-0 w-full space-y-4">
 			<div className="flex items-center gap-4 text-slate-800">
 				<ClipboardCheck className="h-12 w-12 text-rose-500" />
 				<h2 className="text-3xl md:text-4xl font-bold">Satu Langkah Terakhir</h2>
@@ -697,7 +697,7 @@ const SummarySlide = ({ formData, user, onSubmit, onBack }: any) => {
 
 			{/* --- KARTU VISUAL --- */}
 			<div className="w-full max-w-xl space-y-4 text-left">
-				<Card className="bg-white/70">
+				<Card className="bg-white/70 py-0">
 					<CardContent className="p-4 flex items-start gap-4">
 						<div className="p-2 bg-blue-100 rounded-lg">
 							<User className="h-6 w-6 text-blue-600" />
@@ -710,7 +710,7 @@ const SummarySlide = ({ formData, user, onSubmit, onBack }: any) => {
 						</div>
 					</CardContent>
 				</Card>
-				<Card className="bg-white/70">
+				<Card className="bg-white/70 py-0">
 					<CardContent className="p-4 flex items-start gap-4">
 						<div className="p-2 bg-green-100 rounded-lg">
 							<Heart className="h-6 w-6 text-green-600" />
@@ -723,7 +723,7 @@ const SummarySlide = ({ formData, user, onSubmit, onBack }: any) => {
 						</div>
 					</CardContent>
 				</Card>
-				<Card className="bg-white/70">
+				<Card className="bg-white/70 py-0">
 					<CardContent className="p-4 flex items-start gap-4">
 						<div className="p-2 bg-purple-100 rounded-lg">
 							<CheckCircle className="h-6 w-6 text-purple-600" />
