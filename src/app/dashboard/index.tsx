@@ -280,7 +280,7 @@ export default function HealthyControlDashboard() {
 			<div className="min-h-screen bg-slate-100 font-sans">
 				<motion.div variants={pageVariants} initial="initial" animate="animate" className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-12">
 					<motion.header variants={itemVariants} className="text-center mb-12 space-y-3">
-						<h1 className="text-3xl md:text-5xl font-bold text-slate-800 tracking-tight">Selamat Datang, Budi!</h1>
+						<h1 className="text-3xl md:text-5xl font-bold text-slate-800 tracking-tight">Selamat Datang!</h1>
 						<p className="text-lg md:text-xl text-slate-500 max-w-3xl mx-auto">Analisis terakhir Anda {summary.last_assessment_date_human}. Ini adalah pusat komando kesehatan Anda.</p>
 						<div className="flex justify-center items-center gap-4 pt-2">
 							<Badge className={`${getRiskStyling(summary.latest_status.category_code).badge} text-base px-4 py-2`}>{summary.latest_status.category_title}</Badge>
